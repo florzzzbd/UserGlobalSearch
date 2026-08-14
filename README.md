@@ -85,8 +85,6 @@ _____________________________________________________________________________
 
 ### Native settings panel
 
-The settings page follows Discord's own design: toggles, sliders and section headers that match the real thing.
-
 Sections: Search, Interface, Message Search, Service. Includes a servers-only mode, result limits, parallelism tuning, reset to defaults and a live log.
 
 _____________________________________________________________________________
