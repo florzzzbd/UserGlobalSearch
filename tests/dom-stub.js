@@ -1,13 +1,5 @@
 "use strict";
 
-/* ============================================================================
- * Минимальный DOM-стаб для автотестов (без jsdom и сети).
- * Реализует ровно то подмножество DOM, которое использует плагин:
- * createElement/createTextNode, classList, dataset, атрибуты, события,
- * querySelector(All) с селекторами ".cls", "tag", ".a.b", "tag.cls",
- * '[class*="substr"]', "*" и потомков через пробел.
- * ========================================================================== */
-
 class TextNode {
 	constructor(data) {
 		this.data = String(data);
@@ -114,7 +106,6 @@ class El {
 		const i = arr.indexOf(fn);
 		if (i >= 0) arr.splice(i, 1);
 	}
-	/** Синхронная диспетчеризация для тестов; ev - любой объект с type. */
 	dispatchEvent(ev) {
 		const arr = this.listeners[ev.type] ?? [];
 		for (const f of arr) f(ev);
@@ -148,7 +139,6 @@ class El {
 	querySelectorAll(sel) { return queryAll(this, sel); }
 }
 
-/** Проверка простого селектора (без запятых): tag, .cls, .a.b, [class*="x"], "*". */
 function matchSimple(node, sel) {
 	if (!(node instanceof El)) return false;
 	sel = String(sel).trim();
@@ -183,7 +173,6 @@ function* descendants(node) {
 	}
 }
 
-/** Поиск по селектору с поддержкой потомков через пробел. */
 function queryAll(root, sel) {
 	const parts = String(sel).trim().split(/\s+/).filter(Boolean);
 	let current = [root];
@@ -199,7 +188,6 @@ function queryAll(root, sel) {
 	return current;
 }
 
-/** Создание документа-стаба с html/head/body. */
 function createDocument() {
 	const documentElement = new El("html");
 	const head = new El("head");
@@ -226,7 +214,6 @@ function createDocument() {
 	};
 }
 
-/** Установка глобалов (document, HTMLElement, Node, MutationObserver). */
 function installDom() {
 	const doc = createDocument();
 	global.document = doc;
