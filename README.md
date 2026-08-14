@@ -41,7 +41,7 @@ UserGlobalSearch adds a new trigger symbol to the Quick Switcher, right next to 
 |---|---|
 | `&` | List of everyone you share something with, friends first |
 | `&name` | Pick a user: friends, DM partners, mutual server members |
-| `&name ` (with a space) | That user's recent messages across all your mutual servers, DMs and groups |
+| `&name` | That user's recent messages across all your mutual servers, DMs and groups |
 | `&name text` | Search that user's messages by text, same scope |
 
 Everything renders inside the native Quick Switcher window. Same fonts, same colors, same hover states. It follows your theme (dark, light or custom) through Discord's own CSS variables, so it reads like a Discord update rather than a plugin.
