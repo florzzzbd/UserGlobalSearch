@@ -1,13 +1,5 @@
 "use strict";
 
-/* ============================================================================
- * Тесты интеграции с Quick Switcher на DOM-стабе:
- *  • привязка к окну и добавление «&» в нативную подсказку;
- *  • активация режима по вводу «&», деактивация на обычном вводе;
- *  • наш хост живёт ВНУТРИ нативного скроллера (не оверлей);
- *  • клавиатура: стрелки двигают выбор циклически, Tab/Enter уходят в плагин.
- * ========================================================================== */
-
 const test = require("node:test");
 const assert = require("node:assert/strict");
 
@@ -17,7 +9,6 @@ const { document } = installDom();
 const Plugin = require("../UserGlobalSearch.plugin.js");
 const I = Plugin.__internals;
 
-/** Сборка фейкового окна быстрого поиска, похожего на нативное. */
 function makeSwitcherDom() {
 	const root = document.createElement("div");
 	root.className = "quickswitcher-3c8b1a";
@@ -38,7 +29,6 @@ function makeSwitcherDom() {
 	return { root, input, scroller, protip };
 }
 
-/** Фейковый плагин-хозяин интеграции. */
 function makeFakePlugin() {
 	return {
 		settings: { ...I.DEFAULT_SETTINGS },
@@ -73,10 +63,9 @@ test("attach: «&» добавляется в подсказку рядом с @
 	integ.attach(root);
 
 	const amp = protip.querySelector(".ugs2-protip-amp");
-	assert.ok(amp, "символ & вставлен");
+	assert.ok(amp);
 	assert.equal(amp.textContent, "&");
 	assert.equal(amp.title, "& - глобальный поиск пользователей");
-	/* повторный attach не дублирует */
 	integ.patchProtip(root);
 	assert.equal(protip.querySelectorAll(".ugs2-protip-amp").length, 1);
 	integ.detach();
@@ -94,13 +83,13 @@ test("evaluate: «&» активирует режим, обычный ввод -
 	assert.equal(plugin.calls.at(-1).mode, "pick");
 	assert.equal(plugin.calls.at(-1).userQuery, "so");
 	assert.equal(root.getAttribute("data-ugs2-active"), "1");
-	assert.ok(root.querySelector(".ugs2-host"), "хост смонтирован top-level вне нативного скроллера");
-	assert.equal(scroller.querySelector(".ugs2-host"), null, "в нативном скроллере хоста нет");
+	assert.ok(root.querySelector(".ugs2-host"));
+	assert.equal(scroller.querySelector(".ugs2-host"), null);
 
 	input.value = "обычный запрос";
 	integ.evaluate();
 	assert.equal(root.getAttribute("data-ugs2-active"), null);
-	assert.equal(root.querySelector(".ugs2-host"), null, "хост убран после деактивации");
+	assert.equal(root.querySelector(".ugs2-host"), null);
 
 	integ.detach();
 	root.remove();
@@ -146,11 +135,11 @@ test("клавиатура: стрелки цикличны, Enter/Tab уход�
 	assert.equal(integ.selected, 1);
 	keydown(input, "ArrowUp");
 	assert.equal(integ.selected, 0);
-	keydown(input, "ArrowUp"); // цикл вверх → последняя
+	keydown(input, "ArrowUp");
 	assert.equal(integ.selected, 2);
 
 	const enter = keydown(input, "Enter");
-	assert.ok(enter.defaultPrevented, "Enter перехвачен в нашем режиме");
+	assert.ok(enter.defaultPrevented);
 	assert.deepEqual(plugin.activated, [2]);
 
 	const tab = keydown(input, "Tab");
@@ -158,9 +147,8 @@ test("клавиатура: стрелки цикличны, Enter/Tab уход�
 	assert.equal(plugin.tabCalled, 1);
 
 	const esc = keydown(input, "Escape");
-	assert.equal(esc.defaultPrevented, false, "Esc не перехватывается - нативное закрытие");
+	assert.equal(esc.defaultPrevented, false);
 
-	/* В неактивном режиме стрелки НЕ перехватываются */
 	integ.deactivate();
 	const down = keydown(input, "ArrowDown");
 	assert.equal(down.defaultPrevented, false);
@@ -182,8 +170,6 @@ test("setInputValue: значение + событие input доходят до
 	root.remove();
 });
 
-/* ------------------- восстановление после перерисовки Discord ------------- */
-
 test("хост восстанавливается после того, как React снёс чужой узел", () => {
 	const { root, input, scroller } = makeSwitcherDom();
 	const plugin = makeFakePlugin();
@@ -201,15 +187,13 @@ test("хост восстанавливается после того, как Re
 	assert.ok(root.querySelector(".ugs2-host"));
 	assert.equal(root.querySelectorAll(".ugs2-row").length, 2);
 
-	/* React сносит чужой узел при своей перерисовке - симулируем */
 	integ.host.remove();
 	assert.equal(root.querySelector(".ugs2-host"), null);
 
-	/* Наблюдатель замечает пропажу и мгновенно восстанавливает последний вид */
 	integ.handleMutations([]);
 	const host = root.querySelector(".ugs2-host");
-	assert.ok(host, "хост восстановлен");
-	assert.equal(host.querySelectorAll(".ugs2-row").length, 2, "строки на месте");
+	assert.ok(host);
+	assert.equal(host.querySelectorAll(".ugs2-row").length, 2);
 
 	integ.detach();
 	root.remove();
