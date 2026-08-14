@@ -1,19 +1,10 @@
 "use strict";
 
-/* ============================================================================
- * Автотесты чистого движка плагина (node --test).
- * Здесь нет DOM и нет Discord: проверяются разбор запроса, транслит,
- * скоринг, ранжирование, дедупликация, бейджи, плюрализация и транспорт
- * (через поддельный REST-модуль).
- * ========================================================================== */
-
 const test = require("node:test");
 const assert = require("node:assert/strict");
 
 const Plugin = require("../UserGlobalSearch.plugin.js");
 const I = Plugin.__internals;
-
-/* ------------------------------ parseAmpQuery ----------------------------- */
 
 test("parseAmpQuery: пустой запрос → browse", () => {
 	assert.equal(I.parseAmpQuery("&").mode, "browse");
@@ -41,27 +32,23 @@ test("parseAmpQuery: ник + пробел → messages (все сообщени
 	assert.equal(r.allMessages, true);
 });
 
-test("parseAmpQuery: «demo» - обычный запрос (демо-режим удалён в v1.0.3)", () => {
+test("parseAmpQuery: «demo» - обычный запрос", () => {
 	const r = I.parseAmpQuery("&demo");
 	assert.equal(r.mode, "pick");
 	assert.equal(r.userQuery, "demo");
 });
 
-/* -------------------------------- normalize ------------------------------- */
-
 test("normalize: регистр, ё, пробелы", () => {
 	assert.equal(I.normalize("  СоНя  "), "соня");
 	assert.equal(I.normalize("Ёлка"), "елка");
-	assert.equal(I.normalize("a   b"), "a b");
+	assert.equal(I.normalize("a  b"), "a b");
 	assert.equal(I.normalize(null), "");
 });
-
-/* ------------------------------- транслит --------------------------------- */
 
 test("translitRuToEn: «соня» → sonya", () => {
 	assert.equal(I.translitRuToEn("соня"), "sonya");
 	assert.equal(I.translitRuToEn("щука"), "schuka");
-	assert.equal(I.translitRuToEn("жёлтый"), "zheltyy"); // ж→zh ё→e л→l т→t ы→y й→y
+	assert.equal(I.translitRuToEn("жёлтый"), "zheltyy");
 });
 
 test("translitEnToRu: sonya → «соня», диграфы", () => {
@@ -80,20 +67,17 @@ test("queryVariants: двунаправленный транслит", () => {
 	assert.deepEqual(off, ["соня"]);
 });
 
-/* -------------------------------- скоринг --------------------------------- */
-
-test("scoreField: точное > префикс > подстрока; subsequence НЕ матчит (v1.0.3)", () => {
+test("scoreField: точное > префикс > подстрока; subsequence НЕ матчит", () => {
 	const q = ["son"];
 	const exact = I.scoreField(["sonya"], "sonya").score;
 	const prefix = I.scoreField(q, "sonya").score;
 	const sub = I.scoreField(["ony"], "sonya").score;
-	const seq = I.scoreField(["sna"], "sonya").score; // s..n...a по порядку - больше не совпадение
+	const seq = I.scoreField(["sna"], "sonya").score;
 	assert.ok(exact > prefix, "exact > prefix");
 	assert.ok(prefix > sub, "prefix > substring");
 	assert.ok(sub > 0, "substring > 0");
-	assert.equal(seq, 0, "subsequence-only не даёт очков - рандом не матчится");
+	assert.equal(seq, 0, "subsequence-only не даёт очков");
 	assert.equal(I.scoreField(["zzz"], "sonya").score, 0);
-	/* сама функция остаётся доступной и корректной */
 	assert.ok(I.subsequenceScore("sna", "sonya") > 0);
 });
 
@@ -119,7 +103,7 @@ test("searchUsers: друзья выше при равной базе", () => {
 		guildMembers: [{ user: { id: "2", username: "sonya2", globalName: "Sonya" }, guildId: "g", guildName: "G", nick: null }]
 	});
 	const res = I.searchUsers("sonya", candidates, { translitEnabled: false, friendsFirst: true, limit: 10 });
-	assert.equal(String(res[0].candidate.user.id), "1"); // друг +25 → выше
+	assert.equal(String(res[0].candidate.user.id), "1");
 });
 
 test("searchUsers: лимит и пустой запрос (browse)", () => {
@@ -178,8 +162,6 @@ test("highlightRanges: координаты совпадения", () => {
 	assert.deepEqual(I.highlightRanges("", "x"), []);
 });
 
-/* ------------------------------- плюрализация ----------------------------- */
-
 test("plural: ru 1/2/5", () => {
 	const forms = ["сервер", "сервера", "серверов"];
 	assert.equal(I.plural("ru", 1, forms), "сервер");
@@ -195,12 +177,10 @@ test("plural: en/ja", () => {
 	assert.equal(I.plural("ja", 5, ["サーバー"]), "サーバー");
 });
 
-/* ------------------------------ локализация ------------------------------- */
-
 test("detectLocale: из стора, из DOM, дефолт", () => {
 	assert.equal(I.detectLocale({ locale: "ru" }), "ru");
-	assert.equal(I.detectLocale({ locale: "en-GB" }), "en-GB"); // британская - свой пакет
-	assert.equal(I.detectLocale(null), "en-US");                // без стора и DOM → дефолт
+	assert.equal(I.detectLocale({ locale: "en-GB" }), "en-GB");
+	assert.equal(I.detectLocale(null), "en-US");
 });
 
 test("translate: fallback на en-US при отсутствии ключа", () => {
@@ -210,18 +190,13 @@ test("translate: fallback на en-US при отсутствии ключа", ()
 	assert.equal(I.translate("ru", "nonexistent-key"), "nonexistent-key");
 });
 
-/* ------------------------------- снежинки --------------------------------- */
-
 test("snowflake: сравнение и время", () => {
 	assert.ok(I.snowflakeNewer("2000", "1000"));
 	assert.ok(!I.snowflakeNewer("1000", "2000"));
-	assert.equal(I.snowflakeTime("0"), 1420070400000); // (0>>22)+epoch
+	assert.equal(I.snowflakeTime("0"), 1420070400000);
 	assert.equal(I.snowflakeTime("не-число"), 0);
 });
 
-/* -------------------------------- транспорт ------------------------------- */
-
-/** Поддельный REST-модуль Discord: маршрут → функция ответа. */
 function fakeRest(routes) {
 	const calls = [];
 	return {
@@ -269,7 +244,7 @@ test("transport: сбор результатов по нескольким це�
 	);
 	assert.ok(lastBatch);
 	assert.equal(lastBatch.length, 4);
-	assert.equal(lastBatch[0].id, "250"); // свежее первым
+	assert.equal(lastBatch[0].id, "250");
 	assert.equal(lastBatch[0].jump, "/channels/g2/c2/250");
 	assert.ok(summary);
 	assert.equal(summary.found, 4);
@@ -341,8 +316,6 @@ test("transport: fallback на строковую сигнатуру get(url)", 
 	assert.equal(r.messages.length, 0);
 });
 
-/* --------------------------------- демо ----------------------------------- */
-
 test("demoCandidates: 7 уникальных пользователей", () => {
 	const demo = I.demoCandidates();
 	assert.equal(demo.length, 7);
@@ -351,8 +324,6 @@ test("demoCandidates: 7 уникальных пользователей", () => 
 	assert.ok(demo.some((c) => c.user.bot));
 });
 
-/* ----------------------- normalizeRelationships --------------------------- */
-
 test("normalizeRelationships: объект, Map и {type}-форма", () => {
 	assert.deepEqual([...I.normalizeRelationships({ a: 1, b: 2, c: 4 })], ["a"]);
 	assert.deepEqual([...I.normalizeRelationships(new Map([["u1", 1], ["u2", 3]]))], ["u1"]);
@@ -360,8 +331,6 @@ test("normalizeRelationships: объект, Map и {type}-форма", () => {
 	assert.deepEqual([...I.normalizeRelationships(null)], []);
 	assert.deepEqual([...I.normalizeRelationships(undefined)], []);
 });
-
-/* ------------------------------ restGetCompat ----------------------------- */
 
 test("restGetCompat: объектная сигнатура приоритетна, строковая - запасная", async () => {
 	const objectForm = { get: async (arg) => ({ body: typeof arg === "object" ? { ok: 1 } : { ok: 0 } }) };
@@ -375,7 +344,7 @@ test("restGetCompat: объектная сигнатура приоритетн�
 	};
 	const body = await I.restGetCompat(stringForm, "/users/@me", {});
 	assert.equal(body.id, "42");
-	assert.equal(body.url, "/users/@me"); // без «?» при пустом query
+	assert.equal(body.url, "/users/@me");
 
 	let seen = null;
 	const withQuery = {
