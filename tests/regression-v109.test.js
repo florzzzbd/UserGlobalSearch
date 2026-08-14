@@ -2,7 +2,7 @@
 
 /* v1.0.9 regression tests: click reliability (host-level delegation, host
    re-attach without row rebuild), jump ordering (close modal, then navigate),
-   navigation module validation, florzzbd author. */
+   navigation module validation, florzzzbd author. */
 const test = require("node:test");
 const assert = require("node:assert/strict");
 
@@ -109,7 +109,7 @@ test("v1.0.9: host re-attach keeps the same node with rows and listener", () => 
 	}
 });
 
-test("v1.0.9: author and repo links point to florzzbd", () => {
-	assert.equal(I.PLUGIN_AUTHOR, "florzzbd");
+test("v1.0.9: author and repo links point to florzzzbd", () => {
+	assert.equal(I.PLUGIN_AUTHOR, "florzzzbd");
 	assert.ok(I.CSS_TEXT.length > 1000);
 });
