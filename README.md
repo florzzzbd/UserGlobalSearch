@@ -129,12 +129,6 @@ If you have an older copy lying around (including one named `GlobalUserSearch.pl
 
 ## FAQ
 
-**Is this against Discord's ToS?**
-Like every BetterDiscord plugin, it modifies the client, which Discord officially doesn't allow. Use at your own risk. The plugin only reads data your client can already access and talks to Discord's own search endpoints.
-
-**Does it work in the browser?**
-No. BetterDiscord only exists for the desktop app.
-
 **Can it find messages from servers I'm not in?**
 No. Discord's API simply doesn't return those, and no plugin can change that. DMs and groups are searched globally; servers are searched only where you're both members.
 
