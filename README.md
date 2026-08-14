@@ -40,7 +40,6 @@ UserGlobalSearch adds a new trigger symbol to the Quick Switcher, right next to 
 | You type | What happens |
 |---|---|
 | `&` | List of everyone you share something with, friends first |
-| `&name` | Pick a user: friends, DM partners, mutual server members |
 | `&name` | That user's recent messages across all your mutual servers, DMs and groups |
 | `&name text` | Search that user's messages by text, same scope |
 
