@@ -8,7 +8,7 @@ UserGlobalSearch is a BetterDiscord plugin that turns the Quick Switcher (Ctrl+K
 
 ### Download
 
-Raw file link: [UserGlobalSearch.plugin.js](https://raw.githubusercontent.com/florzzzbd/UserGlobalSearch/main/UserGlobalSearch.plugin.js)
+Raw file link: [UserGlobalSearch.plugin.js](https://github.com/florzzzbd/UserGlobalSearch/blob/main/GlobalUserSearch.plugin.js)
 
 *"Discord" is a trademark of Discord Inc. This project is not affiliated with Discord Inc. See the full [trademark notice](#trademark-notice).*
 
