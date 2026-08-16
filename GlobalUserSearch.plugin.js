@@ -3,6 +3,8 @@
  * @author florzzz
  * @version 1.0.0
  * @description Global user search in the Quick Switcher (Ctrl+K) via the & symbol: pick a person, see their recent messages across all mutual servers, DMs and group chats.
+ * @invite YPuDp5SXN
+ * @donate https://www.donationalerts.com/r/florzzzzzzz
  * @website https://github.com/florzzzbd/UserGlobalSearch
  * @source https://github.com/florzzzbd/UserGlobalSearch/blob/main/UserGlobalSearch.plugin.js
  * @updateUrl https://raw.githubusercontent.com/florzzzbd/UserGlobalSearch/main/UserGlobalSearch.plugin.js
