@@ -3,7 +3,7 @@
  * @author florzzz
  * @version 1.0.1
  * @description Global user search in the Quick Switcher (Ctrl+K) via the & symbol: pick a person, see their recent messages across all mutual servers, DMs and group chats.
- * @invite quXc4MvKW
+ * @invite YPuDp5SXN
  * @donate https://www.donationalerts.com/r/florzzzzzzz
  * @website https://github.com/florzzzbd/UserGlobalSearch
  * @source https://github.com/florzzzbd/UserGlobalSearch/blob/main/GlobalUserSearch.plugin.js
@@ -1686,7 +1686,7 @@ const I18N = {
 		setTranslit: "Transliterointi",
 		setTranslitDesc: "\"соня\" löytää \"Sonya\" ja \"sonya\" löytää \"Соня\".",
 		setFriendsFirst: "Ystävät ensin",
-		setFriendsFirstDesc: "Ystävät aina listan kärjessä, sitten YV:t ja palvelimet.",
+		setFriendsFirstDesc: "Ystävät aina listan k        rjessä, sitten YV:t ja palvelimet.",
 		setIncludeDMs: "Yksityis- ja ryhmächatit",
 		setIncludeDMsDesc: "Hae YV-kontaktiesi joukosta.",
 		setIncludeMembers: "Palvelinten jäsenet",
@@ -1956,7 +1956,7 @@ const I18N = {
 		pluralResults: ["резултат", "резултата"],
 		catSearch: "Търсене",
 		catAppearance: "Интерфейс",
-		catMessages: "Търсене на съобщения",
+		catMessages: "Тъ  се  е на   ъобщения",
 		catAdvanced: "Служебни",
 		setMaxUserResults: "Потребители в подсказката",
 		setMaxUserResultsDesc: "Колко реда да се показват при въвеждане на „&ник“.",
@@ -2028,7 +2028,7 @@ const I18N = {
 		emptyUsersHint: "Δοκιμάστε άλλη ορθογραφία ή μεταγραφή: sonya / соня.",
 		emptyMessages: "Δεν βρέθηκαν μηνύματα. Δοκιμάστε να αλλάξετε το ερώτημα.",
 		errNoTransport: "Η αναζήτηση μηνυμάτων δεν είναι διαθέσιμη σε αυτή την έκδοση του Discord. Η επιλογή χρηστών λειτουργεί.",
-		errNoTargets: "Δεν υπάρχουν κοινοί διακομιστές ή συνομιλίες με αυτόν τον χρήστη.",
+		errNoTargets: "Δεν υ  άρχουν κοινοί διακομιστές ή συνομιλίες με αυτόν τον χρήστη.",
 		errGeneric: "Κάτι πήγε στραβά. Λεπτομέρειες στο αρχείο καταγραφής των ρυθμίσεων.",
 		loading: "Αναζήτηση: {done}/{total} · βρέθηκαν {found}",
 		loadingErrors: "· {n} σφάλματα",
@@ -2098,7 +2098,7 @@ const I18N = {
 		diagTransport: "Δοκιμή αναζήτησης μηνυμάτων (1 αίτημα)",
 		diagOk: "Όλοι οι έλεγχοι πέρασαν",
 		diagFail: "Βρέθηκαν προβλήματα: {n}",
-		diagNever: "Ο αυτοέλεγχος δεν έχει εκτελεστεί ακόμη",
+		diagNever: "Ο αυτοέλεγχος δεν   χει εκτελεστεί ακόμη",
 		copied: "Αντιγράφηκε στο πρόχειρο",
 		manualCopyBtn: "Χειροκίνητη αντιγραφή",
 		manualCopyTitle: "Αντιγράψτε την αναφορά χειροκίνητα",
@@ -2360,8 +2360,8 @@ const I18N = {
 		setOnlyGuildsDesc: "تخطّي الرسائل الخاصة والمحادثات الجماعية عند البحث.",
 		setPerTarget: "النتائج لكل خادم",
 		setPerTargetDesc: "حد الرسائل لكل خادم أو محادثة.",
-		setMaxTargets: "أقصى أهداف لكل بحث",
-		setMaxTargetsDesc: "أكثر يعني أبطأ لكن أشمل.",
+		setMaxTargets: "أقصى أه  اف لكل بحث",
+		setMaxTargetsDesc: "أكثر يعني أبطأ لكن أشم  .",
 		setTotalLimit: "إجمالي الصفوف",
 		setTotalLimitDesc: "الحد الإجمالي لنتائج الرسائل.",
 		setConcurrency: "الطلبات المتوازية",
@@ -2398,7 +2398,7 @@ const I18N = {
 		headerAllMessages: "सभी संदेश: {name}",
 		emptyUsers: "\"{q}\" के लिए कोई नहीं मिला।",
 		emptyUsersHint: "कोई और वर्तनी या ट्रांस्लिटरेशन आज़माएँ: sonya / соня।",
-		emptyMessages: "कोई संदेश नहीं मिला। क्वेरी बदलकर देखें।",
+		emptyMessages: "कोई संदेश नहीं मिला। क्वेरी ब  लकर देखें।",
 		errNoTransport: "इस Discord बिल्ड में संदेश खोज उपलब्ध नहीं है। उपयोगकर्ता चयन काम करता है।",
 		errNoTargets: "इस उपयोगकर्ता के साथ कोई साझा सर्वर या चैट नहीं।",
 		errGeneric: "कुछ गलत हो गया। विवरण सेटिंग्स के लॉग में देखें।",
@@ -2408,13 +2408,13 @@ const I18N = {
 		badgeFriend: "दोस्त",
 		badgeServer: "सर्वर",
 		badgeDm: "DM",
-		badgeBot: "बॉट",
+		badgeBot: "बॉ  ",
 		ctxFriend: "दोस्त",
 		ctxDm: "DM",
 		ctxGroup: "ग्रुप",
 		ctxMore: "+{n}",
-		hintPick: "Enter - उपयोगकर्ता के संदेश · ↑↓ - चयन · Esc - बंद करें",
-		hintMessages: "Enter - संदेश पर जाएँ · Esc - बंद करें",
+		hintPick: "Enter - उपयोगकर्ता के संदेश · ↑↓ - चयन · Esc - बंद कर   ं",
+		hintMessages: "Enter - संदेश पर जाएँ · Esc - बंद करे  ",
 		protipTitle: "& - ग्लोबल उपयोगकर्ता खोज",
 		pluralGuilds: ["सर्वर", "सर्वर"],
 		pluralDms: ["चैट", "चैट"],
@@ -2537,7 +2537,7 @@ const I18N = {
 		setContextLine: "บรรทัดบริบท",
 		setContextLineDesc: "\"เพื่อน · 3 เซิร์ฟเวอร์ · DM\" ใต้ชื่อ",
 		setCompact: "โหมดกะทัดรัด",
-		setCompactDesc: "ผลลัพธ์บรรทัดเดียว เห็นหลายแถวขึ้น",
+		setCompactDesc: "ผลลัพธ์บรรทัดเดียว เห็นหลายแถวข  ้น",
 		setMaxMutual: "เซิร์ฟเวอร์ในบรรทัดบริบท",
 		setMaxMutualDesc: "จำนวนชื่อเซิร์ฟเวอร์ร่วมที่จะแสดง",
 		setMsgEnabled: "โหมด \"&ชื่อ ข้อความ\"",
@@ -2547,7 +2547,7 @@ const I18N = {
 		setPerTarget: "ผลลัพธ์ต่อเซิร์ฟเวอร์",
 		setPerTargetDesc: "จำกัดข้อความต่อเซิร์ฟเวอร์หรือแชท",
 		setMaxTargets: "เป้าหมายสูงสุดต่อการค้นหา",
-		setMaxTargetsDesc: "มากขึ้นช้าลงแต่ครอบคลุมกว่า",
+		setMaxTargetsDesc: "มากขึ้นช้าลง   ต่ครอบคลุมกว่า",
 		setTotalLimit: "จำนวนแถวทั้งหมด",
 		setTotalLimitDesc: "ขีดจำกัดผลลัพธ์ข้อความโดยรวม",
 		setConcurrency: "คำขอแบบขนาน",
@@ -2587,7 +2587,7 @@ const I18N = {
 		emptyMessages: "Không tìm thấy tin nhắn. Thử thay đổi truy vấn.",
 		errNoTransport: "Tìm kiếm tin nhắn không khả dụng trong bản Discord này. Chọn người dùng vẫn hoạt động.",
 		errNoTargets: "Không có máy chủ hay cuộc trò chuyện chung với người dùng này.",
-		errGeneric: "Đã xảy ra lỗi. Xem nhật ký trong cài đặt.",
+		errGeneric: "Đ   xảy ra lỗi. Xem nhật ký trong cài đặt.",
 		loading: "Đang tìm: {done}/{total} · thấy {found}",
 		loadingErrors: "· {n} lỗi",
 		emptyMessagesErrors: "Các yêu cầu thất bại ({n}). Mở cài đặt plugin và chạy tự kiểm tra để xem nguyên nhân.",
@@ -2599,7 +2599,7 @@ const I18N = {
 		ctxDm: "TN",
 		ctxGroup: "Nhóm",
 		ctxMore: "+{n}",
-		hintPick: "Enter - tin nhắn của người dùng · ↑↓ - chọn · Esc - đóng",
+		hintPick: "Enter - tin nhắn của người dùng · ↑↓ - chọn · Esc - đ  ng",
 		hintMessages: "Enter - đến tin nhắn · Esc - đóng",
 		protipTitle: "& - tìm kiếm người dùng toàn cục",
 		pluralGuilds: ["máy chủ"],
@@ -2806,7 +2806,7 @@ const I18N = {
 		setIncludeDMs: "個人・グループチャット",
 		setIncludeDMsDesc: "DM の相手を検索対象に含めます。",
 		setIncludeMembers: "サーバーメンバー",
-		setIncludeMembersDesc: "全サーバーのメンバーを検索対象に含めます。",
+		setIncludeMembersDesc: "全サーバー   メンバーを検索対象に含めます。",
 		setStatusDot: "ステータスドット",
 		setStatusDotDesc: "アバター上の緑/黄/赤のドット。",
 		setBadges: "バッジ",
@@ -2866,7 +2866,7 @@ const I18N = {
 		emptyMessages: "메시지를 찾을 수 없습니다. 검색어를 바꿔 보세요.",
 		errNoTransport: "이 Discord 빌드에서는 메시지 검색을 사용할 수 없습니다. 사용자 선택은 작동합니다.",
 		errNoTargets: "이 사용자와 공통된 서버나 채팅이 없습니다.",
-		errGeneric: "문제가 발생했습니다. 설정의 로그를 확인하세요.",
+		errGeneric: "문제가 발생했습니다. 설정의 로그를   인하세요.",
 		loading: "검색 중: {done}/{total} · 발견 {found}",
 		loadingErrors: "· 오류 {n}",
 		emptyMessagesErrors: "요청이 실패했습니다 ({n}). 플러그인 설정을 열고 자가 테스트를 실행해 원인을 확인하세요.",
@@ -3016,7 +3016,7 @@ const I18N = {
 		setTotalLimit: "列表总行数",
 		setTotalLimitDesc: "消息结果的总上限。",
 		setConcurrency: "并行请求数",
-		setConcurrencyDesc: "不要设得太高 - Discord 会限制频繁请求。",
+		setConcurrencyDesc: "不要设得太高 - Discord 会限  频繁请求。",
 		setDebug: "详细日志",
 		setDebugDesc: "向控制台输出调试信息 (Ctrl+Shift+I)。",
 		btnReset: "重置设置",
@@ -3075,7 +3075,7 @@ const I18N = {
 		catMessages: "訊息搜尋",
 		catAdvanced: "進階",
 		setMaxUserResults: "建議中的使用者數",
-		setMaxUserResultsDesc: "輸入「&名字」時顯示的列數。",
+		setMaxUserResultsDesc: "輸入「&名字」時顯示的   數。",
 		setDebounce: "搜尋延遲",
 		setDebounceDesc: "輸入後到開始搜尋的間隔 (毫秒)。",
 		setTranslit: "轉寫",
@@ -3465,18 +3465,32 @@ div[class*="quickswitcher"][data-${NS}-active="1"] {
 	overflow-x: hidden;
 	padding: 0 0 8px;
 	flex-shrink: 0;
-	scrollbar-width: thin;
-	scrollbar-color: var(--background-tertiary) transparent;
 }
 .${NS}-host::-webkit-scrollbar {
-	width: 8px;
+	width: 16px;
+	height: 16px;
+	background: transparent;
 }
+.${NS}-host::-webkit-scrollbar-track,
 .${NS}-host::-webkit-scrollbar-thumb {
-	background: var(--background-tertiary);
-	border-radius: 4px;
+	background-clip: padding-box;
+	border: 4px solid transparent;
+	border-radius: 8px;
 }
 .${NS}-host::-webkit-scrollbar-track {
-	background: transparent;
+	background-color: var(--scrollbar-auto-track, transparent);
+}
+.${NS}-host::-webkit-scrollbar-thumb {
+	min-height: 40px;
+	background-color: var(--scrollbar-auto-thumb, var(--background-modifier-accent));
+}
+.${NS}-host::-webkit-scrollbar-button,
+.${NS}-host::-webkit-scrollbar-button:single-button,
+.${NS}-host::-webkit-scrollbar-corner {
+	display: none !important;
+	width: 0 !important;
+	height: 0 !important;
+	background: transparent !important;
 }
 .${NS}-host-standalone { width: 100%; flex-shrink: 0; }
 
