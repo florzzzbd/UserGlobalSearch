@@ -1,6 +1,6 @@
 # UserGlobalSearch
 
-![Version](https://img.shields.io/badge/version-1.0.0-5865F2) ![License](https://img.shields.io/badge/license-MIT-green)
+![Version](https://img.shields.io/badge/version-1.0.1-5865F2) ![License](https://img.shields.io/badge/license-MIT-green)
 
 Adds the **&** symbol to Discord's Quick Switcher: search everyone you share a server or DM with, then jump straight into their recent messages. All inside the native search UI, no overlays, no popups.
 
