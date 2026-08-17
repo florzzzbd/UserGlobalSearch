@@ -1,12 +1,12 @@
 {
 	"name": "userglobalsearch",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"description": "BetterDiscord plugin: the & symbol in Quick Switcher - global user search across mutual servers and DMs, natively integrated UI",
 	"author": "florzzzbd",
 	"license": "MIT",
 	"private": true,
 	"scripts": {
-		"check": "node --check UserGlobalSearch.plugin.js",
+		"check": "node --check GlobalUserSearch.plugin.js",
 		"test": "node --test tests/*.test.js"
 	}
 }
