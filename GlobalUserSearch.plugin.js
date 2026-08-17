@@ -1,20 +1,18 @@
 /**
  * @name UserGlobalSearch
  * @author florzzz
- * @version 1.0.0
+ * @version 1.0.1
  * @description Global user search in the Quick Switcher (Ctrl+K) via the & symbol: pick a person, see their recent messages across all mutual servers, DMs and group chats.
- * @invite YPuDp5SXN
- * @donate https://www.donationalerts.com/r/florzzzzzzz
  * @website https://github.com/florzzzbd/UserGlobalSearch
- * @source https://github.com/florzzzbd/UserGlobalSearch/blob/main/UserGlobalSearch.plugin.js
- * @updateUrl https://raw.githubusercontent.com/florzzzbd/UserGlobalSearch/main/UserGlobalSearch.plugin.js
+ * @source https://github.com/florzzzbd/UserGlobalSearch/blob/main/GlobalUserSearch.plugin.js
+ * @updateUrl https://raw.githubusercontent.com/florzzzbd/UserGlobalSearch/main/GlobalUserSearch.plugin.js
  * @license MIT
  */
 
 "use strict";
 
 const PLUGIN_NAME = "UserGlobalSearch";
-const PLUGIN_VERSION = "1.0.0";
+const PLUGIN_VERSION = "1.0.1";
 const PLUGIN_AUTHOR = "florzzz";
 
 const NS = "ugs2";
@@ -58,11 +56,7 @@ const SETTING_LIMITS = Object.freeze({
 	searchConcurrency:  { min: 1,   max: 8,   step: 1   }
 });
 
-const DM_SEARCH_CAP = 20;
-
 const AVATAR_SIZE = 64;
-
-const SEARCH_IDLE_GRACE_MS = 120;
 
 const SEARCH_REQUEST_TIMEOUT_MS = 12000;
 
@@ -3319,6 +3313,23 @@ function snowflakeTime(id) {
 	}
 }
 
+function relativeTime(ts, locale) {
+	try {
+		const then = Number(ts);
+		if (!then) return "";
+		const diff = then - Date.now();
+		const abs = Math.abs(diff);
+		const rtf = new Intl.RelativeTimeFormat(locale || "en-US", { numeric: "auto" });
+		if (abs < 60 * 1000) return rtf.format(Math.trunc(diff / 1000), "second");
+		if (abs < 60 * 60 * 1000) return rtf.format(Math.trunc(diff / 60000), "minute");
+		if (abs < 24 * 60 * 60 * 1000) return rtf.format(Math.trunc(diff / 3600000), "hour");
+		if (abs < 30 * 86400000) return rtf.format(Math.trunc(diff / 86400000), "day");
+		return new Date(then).toLocaleDateString(locale || undefined, { day: "numeric", month: "short", year: "numeric" });
+	} catch (e) {
+		return "";
+	}
+}
+
 function escapeRegExp(str) {
 	return String(str).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
@@ -3452,12 +3463,18 @@ div[class*="quickswitcher"][data-${NS}-active="1"] {
 	overflow-x: hidden;
 	padding: 0 0 8px;
 	flex-shrink: 0;
-	scrollbar-width: none;
+	scrollbar-width: thin;
+	scrollbar-color: var(--background-tertiary) transparent;
 }
 .${NS}-host::-webkit-scrollbar {
-	display: none;
-	width: 0;
-	height: 0;
+	width: 8px;
+}
+.${NS}-host::-webkit-scrollbar-thumb {
+	background: var(--background-tertiary);
+	border-radius: 4px;
+}
+.${NS}-host::-webkit-scrollbar-track {
+	background: transparent;
 }
 .${NS}-host-standalone { width: 100%; flex-shrink: 0; }
 
@@ -3465,7 +3482,7 @@ div[class*="quickswitcher"][data-${NS}-active="1"] {
 	display: flex;
 	align-items: center;
 	gap: 10px;
-	padding: 7px 10px;
+	padding: 6px 16px;
 	margin: 0 8px;
 	border-radius: 4px;
 	cursor: pointer;
@@ -3481,7 +3498,7 @@ div[class*="quickswitcher"][data-${NS}-active="1"] {
 	background: var(--background-modifier-active);
 }
 .${NS}-row.${NS}-compact {
-	padding: 4px 10px;
+	padding: 3px 16px;
 }
 
 .${NS}-iconbox {
@@ -3501,12 +3518,12 @@ div[class*="quickswitcher"][data-${NS}-active="1"] {
 .${NS}-compact .${NS}-avatar  { width: 24px; height: 24px; }
 .${NS}-status {
 	position: absolute;
-	right: -2px;
-	bottom: -2px;
-	width: 12px;
-	height: 12px;
+	right: -1px;
+	bottom: -1px;
+	width: 10px;
+	height: 10px;
 	border-radius: 50%;
-	border: 3px solid var(--background-primary);
+	border: 2px solid var(--background-floating, var(--background-primary));
 	box-sizing: border-box;
 }
 .${NS}-status-online  { background: var(--status-positive, #23a55a); }
@@ -3580,10 +3597,10 @@ div[class*="quickswitcher"][data-${NS}-active="1"] {
 	text-transform: uppercase;
 	letter-spacing: 0.02em;
 	color: #fff;
-	background: var(--brand-experiment, #5865f2);
+	background: var(--brand-500, var(--brand-experiment, #5865f2));
 }
-.${NS}-badge-friend { background: var(--brand-experiment, #5865f2); }
-.${NS}-badge-guilds { background: var(--brand-experiment, #5865f2); }
+.${NS}-badge-friend { background: var(--brand-500, var(--brand-experiment, #5865f2)); }
+.${NS}-badge-guilds { background: var(--brand-500, var(--brand-experiment, #5865f2)); }
 .${NS}-badge-dm     { background: var(--background-accent, #4e5058); }
 .${NS}-badge-bot    { background: var(--status-warning, #f0b232); color: #1e1f22; }
 
@@ -3725,7 +3742,7 @@ div[class*="quickswitcher"][data-${NS}-active="1"] {
 	font-size: 26px;
 	font-weight: 800;
 	color: #fff;
-	background: var(--brand-experiment, #5865f2);
+	background: var(--brand-500, var(--brand-experiment, #5865f2));
 	box-shadow: var(--elevation-low, 0 2px 6px rgba(0,0,0,0.25));
 	flex-shrink: 0;
 	user-select: none;
@@ -3745,7 +3762,7 @@ div[class*="quickswitcher"][data-${NS}-active="1"] {
 	font-weight: 700;
 	padding: 2px 7px;
 	border-radius: 999px;
-	background: var(--brand-experiment, #5865f2);
+	background: var(--brand-500, var(--brand-experiment, #5865f2));
 	color: #fff;
 }
 .${NS}-hero-sub {
@@ -3803,7 +3820,7 @@ div[class*="quickswitcher"][data-${NS}-active="1"] {
 	font-weight: 600;
 	cursor: pointer;
 	color: #fff;
-	background: var(--brand-experiment, #5865f2);
+	background: var(--brand-500, var(--brand-experiment, #5865f2));
 	transition: filter 0.1s ease;
 }
 .${NS}-btn:hover { filter: brightness(1.12); }
@@ -4090,14 +4107,28 @@ class VerifiedRestAPI {
 		throw new Error(`no genuine Discord RestAPI found: checked ${candidates.length}; ${this.samples.join(" | ") || "no candidates"}`);
 	}
 
+	async request(method, arg) {
+		for (let attempt = 0; attempt < 2; attempt++) {
+			const mod = await this.ensure();
+			try {
+				return await Reflect.apply(mod[method], mod, [arg]);
+			} catch (e) {
+				const httpError = e && (typeof e.status === "number" || typeof e.statusCode === "number");
+				if (httpError || attempt === 1) throw e;
+				Journal.warn("transport", "REST module failed mid-session, re-resolving", e);
+				this.active = null;
+				this.preferredForm = null;
+			}
+		}
+		throw new Error("REST request failed unexpectedly");
+	}
+
 	async get(arg) {
-		const mod = await this.ensure();
-		return Reflect.apply(mod.get, mod, [arg]);
+		return this.request("get", arg);
 	}
 
 	async post(arg) {
-		const mod = await this.ensure();
-		return Reflect.apply(mod.post, mod, [arg]);
+		return this.request("post", arg);
 	}
 
 	describe() {
@@ -4951,6 +4982,7 @@ class RowRenderer {
 		row.dataset.index = String(meta.index);
 		row.dataset.kind = "user";
 		row.dataset.userId = String(c.user.id);
+		row.id = `${NS}-opt-${meta.index}`;
 
 		row.appendChild(this.renderAvatar(c.user, meta.status));
 
@@ -4985,6 +5017,7 @@ class RowRenderer {
 		row.dataset.index = String(meta.index);
 		row.dataset.kind = "message";
 		row.dataset.jump = item.jump;
+		row.id = `${NS}-opt-${meta.index}`;
 
 		row.appendChild(this.renderTargetIcon(item));
 
@@ -5001,9 +5034,7 @@ class RowRenderer {
 		row.appendChild(main);
 
 		if (item.ts) {
-			const d = new Date(item.ts);
-			const stamp = d.toLocaleDateString(this.locale, { day: "numeric", month: "short" });
-			row.appendChild(el("span", `${NS}-handle`, stamp));
+			row.appendChild(el("span", `${NS}-handle`, relativeTime(item.ts, this.locale)));
 		}
 		return row;
 	}
@@ -5093,6 +5124,11 @@ class SwitcherIntegration {
 	}
 
 	handleMutations(mutations) {
+		if (!this.root) {
+			let hasAdded = false;
+			for (const m of mutations) if (m.addedNodes.length) { hasAdded = true; break; }
+			if (!hasAdded) return;
+		}
 		let needDetachCheck = false;
 		for (const m of mutations) {
 			for (const node of m.addedNodes) {
@@ -5270,6 +5306,7 @@ class SwitcherIntegration {
 		this.active = false;
 		this.stopHealLoop();
 		this.clearNativeHiding();
+		try { this.input?.removeAttribute("aria-activedescendant"); } catch (e) {}
 		this.selected = -1;
 		this.itemCount = 0;
 		this.lastView = null;
@@ -5387,6 +5424,7 @@ class SwitcherIntegration {
 			return this.host;
 		}
 		const host = el("div", `${NS}-host ${flag}`);
+		host.setAttribute("role", "listbox");
 		host.addEventListener("click", (e) => {
 			const row = e.target?.closest?.(`.${NS}-row`);
 			if (!row || !host.contains(row)) return;
@@ -5431,6 +5469,12 @@ class SwitcherIntegration {
 		const rows = this.host.querySelectorAll(`.${NS}-row`);
 		rows.forEach((r, i) => r.classList.toggle(`${NS}-selected`, i === this.selected));
 		const sel = rows[this.selected];
+		if (this.input) {
+			try {
+				if (sel?.id) this.input.setAttribute("aria-activedescendant", sel.id);
+				else this.input.removeAttribute("aria-activedescendant");
+			} catch (e) {}
+		}
 		try { sel?.scrollIntoView?.({ block: "nearest" }); } catch (e) {}
 	}
 
@@ -5447,7 +5491,8 @@ class SwitcherIntegration {
 				break;
 			case "Enter":
 				e.preventDefault(); e.stopPropagation();
-				this.confirmSelection();
+				if (e.ctrlKey || e.metaKey) this.plugin.openDirectly(this.selected >= 0 ? this.selected : 0);
+				else this.confirmSelection();
 				break;
 			case "Tab":
 				e.preventDefault(); e.stopPropagation();
@@ -5903,7 +5948,6 @@ class UserGlobalSearch {
 			Journal.warn("settings", "failed to load settings, using defaults", e);
 		}
 
-		if (out.searchConcurrency === 2 || out.searchConcurrency === 4) out.searchConcurrency = 6;
 		return out;
 	}
 
@@ -6130,11 +6174,24 @@ class UserGlobalSearch {
 		const renderer = new RowRenderer({ settings: this.settings, locale: this.locale, nativeClasses: this.integration.nativeClasses });
 
 		const candidates = buildCandidates(this.collectSources(parsed.userQuery));
-		const best = searchUsers(parsed.userQuery, candidates, {
-			translitEnabled: this.settings.translitEnabled,
-			friendsFirst: true,
-			limit: 1
-		})[0];
+		const words = [parsed.userQuery, parsed.messageQuery].filter(Boolean).join(" ").split(/\s+/).filter(Boolean);
+		let best = null;
+		let consumed = 0;
+		for (let k = Math.min(words.length, 4); k >= 1 && !best; k--) {
+			const hit = searchUsers(words.slice(0, k).join(" "), candidates, {
+				translitEnabled: this.settings.translitEnabled,
+				friendsFirst: true,
+				limit: 1
+			})[0];
+			if (hit) { best = hit; consumed = k; }
+		}
+		if (best && consumed > 1) {
+			parsed = {
+				...parsed,
+				userQuery: words.slice(0, consumed).join(" "),
+				messageQuery: words.slice(consumed).join(" ")
+			};
+		}
 
 		if (!best) {
 			this.currentResults = [];
@@ -6183,7 +6240,13 @@ class UserGlobalSearch {
 						index: i,
 						query: parsed.messageQuery
 					});
-						return row;
+					row.addEventListener("mousemove", () => {
+						if (this.integration.selected !== i) {
+							this.integration.selected = i;
+							this.integration.updateSelectionDom();
+						}
+					});
+					return row;
 				}),
 				footer: renderer.renderFooter(this.t("hintMessages"))
 			};
@@ -6255,6 +6318,13 @@ class UserGlobalSearch {
 		} else if (entry.kind === "message") {
 			this.jumpTo(entry.item.jump);
 		}
+	}
+
+	openDirectly(index) {
+		const entry = this.currentResults[index];
+		if (!entry) return;
+		if (entry.kind === "user") this.openUser(entry.candidate.user.id);
+		else if (entry.kind === "message") this.jumpTo(entry.item.jump);
 	}
 
 	openUser(userId) {
@@ -6391,7 +6461,6 @@ class UserGlobalSearch {
 		wrap.appendChild(misc);
 
 		const footer = el("div", `${NS}-settings-footer`);
-		footer.innerHTML = "";
 		footer.appendChild(el("span", null, `${PLUGIN_NAME} v${PLUGIN_VERSION} · ${PLUGIN_AUTHOR} · MIT`));
 		footer.appendChild(el("br"));
 		footer.appendChild(el("span", null, this.t("footerHotkeys")));
@@ -6542,6 +6611,7 @@ module.exports.__internals = {
 	queryVariants,
 	snowflakeNewer,
 	snowflakeTime,
+	relativeTime,
 	escapeRegExp,
 	displayName,
 	avatarUrl,
