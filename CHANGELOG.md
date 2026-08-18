@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.0.22 — 2026-08-18
+
+> [!IMPORTANT]
+> The plugin is now named **AmpSearch** and the file is now `AmpSearch.plugin.js`. Remove the old `GlobalUserSearch.plugin.js` copy and install the new file manually once to avoid loading both plugins.
+
+### Fixed
+- **Message search failed on every target with `t[1].toLowerCase is not a function`** — the simplified module lookup could select an unrelated Discord module that happened to expose `get` and `post`. AmpSearch now checks REST candidates against Discord's authenticated user endpoint before sending search requests and re-resolves the module if Discord swaps it during a session
+- Global DM search and per-server tab search now use the verified REST module instead of falling through to malformed legacy responses
+- User results no longer drift into the vertical center of the Quick Switcher. Rows no longer inherit Discord's virtualized result positioning, and the results host is explicitly top-aligned
+- Duplicate pagination guard removed from the load-more path
+- Equal message ids now return `0` from the result sorter instead of producing an unstable order
+
+### Improved
+- Renamed `UserGlobalSearch` to **AmpSearch** across the plugin, file name, metadata, package, documentation, tests and links
+- Console output is now English-only
+- Removed every non-metadata source comment from the distributed plugin file
+- Updated the README and tests to match the current feature set and file name
+
 ## 1.0.2 — 2026-08-18
 
 ### Added
