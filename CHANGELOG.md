@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.0.2 — 2026-08-18
+
+### Added
+- **Infinite scroll in message results** — reaching the bottom of the list loads the next pages automatically until there are no more messages. Cursor-based pagination on the current endpoint, `offset` fallback on the legacy one. Duplicates are filtered by message id, and if the API ever ignores the cursor, the target stops instead of looping the same page
+- Server message rows now show the channel: `#general · ServerName`
+- Final results counter in the header once the search finishes ("found 38")
+- Messages with attachments but no text show the file name (or "Embed") instead of an empty row
+
+### Fixed
+- **Message mode fired up to 6 HTTP requests per keystroke** — unlike user mode, it was never debounced. Message mode now has its own debounce (400 ms floor), and switching modes cancels the stale search instead of letting it overwrite fresh results
+- The list no longer jumps to the top on every batch while loading — scroll position is preserved
+- Highlighting matched only the first occurrence and broke on double spaces / ё — now highlights all occurrences, whitespace-safe
+- Cache key ignored the current server set and limits (stale results after joining a server); cache hits now render instantly without a fake "0/48" spinner
+- Transient failures (5xx, timeouts) get one retry instead of instantly counting as target errors
+- Raw queries were logged to the console on every keystroke — moved to debug level
+- The plugin could stay active with an empty input after Discord re-rendered the switcher mid-session
+
 ## 1.0.1 — 2026-08-17
 
 ### Fixed
