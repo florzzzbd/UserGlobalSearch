@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.22 — 2026-08-18
+
+### Fixed
+- **Message search failed on every target with `t[1].toLowerCase is not a function`** — REST modules are now verified against Discord's authenticated user endpoint before use, and the module is re-resolved if Discord swaps it mid-session
+- Global DM and per-server tab search no longer fall through to malformed legacy responses
+- User results no longer drift into the vertical center of the Quick Switcher
+- Load-more pagination and message sorting are stable now
+
 ## 1.0.2 — 2026-08-18
 
 ### Added
