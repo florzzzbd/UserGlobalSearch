@@ -1,7 +1,7 @@
 /**
  * @name UserGlobalSearch
  * @author florzzz
- * @version 1.0.1
+ * @version 1.0.2
  * @description Global user search in the Quick Switcher (Ctrl+K) via the & symbol: pick a person, see their recent messages across all mutual servers, DMs and group chats.
  * @invite YPuDp5SXN
  * @donate https://www.donationalerts.com/r/florzzzzzzz
@@ -14,7 +14,7 @@
 "use strict";
 
 const PLUGIN_NAME = "UserGlobalSearch";
-const PLUGIN_VERSION = "1.0.1";
+const PLUGIN_VERSION = "1.0.2";
 const PLUGIN_AUTHOR = "florzzz";
 
 const NS = "ugs2";
@@ -4582,10 +4582,28 @@ function highlightRanges(display, query) {
 	const d = String(display ?? "");
 	const q = normalize(query);
 	if (!d || !q) return [];
-	const dl = d.toLowerCase().replace(/ё/g, "е");
-	const idx = dl.indexOf(q);
-	if (idx >= 0) return [[idx, idx + q.length]];
-	return [];
+	const lower = d.toLowerCase().replace(/ё/g, "е");
+	const map = [];
+	let collapsed = "";
+	let pendingSpace = -1;
+	for (let i = 0; i < lower.length; i++) {
+		if (/\s/.test(lower[i])) {
+			if (collapsed.length > 0 && pendingSpace < 0) pendingSpace = i;
+			continue;
+		}
+		if (pendingSpace >= 0) { collapsed += " "; map.push(pendingSpace); pendingSpace = -1; }
+		collapsed += lower[i];
+		map.push(i);
+	}
+	const ranges = [];
+	let from = 0;
+	while (from <= collapsed.length - q.length) {
+		const idx = collapsed.indexOf(q, from);
+		if (idx < 0) break;
+		ranges.push([map[idx], map[idx + q.length - 1] + 1]);
+		from = idx + q.length;
+	}
+	return ranges;
 }
 
 function buildCandidates(sources) {
@@ -4730,6 +4748,7 @@ class MessageSearchTransport {
 		this.form = null;
 		this.cooldownUntil = 0;
 		this.cache = new Map();
+		this.session = null;
 	}
 
 	available() {
@@ -4740,7 +4759,7 @@ class MessageSearchTransport {
 		this.token++;
 	}
 
-	async searchTarget(target, userId, text, perTarget) {
+	async searchTarget(target, userId, text, perTarget, page = null) {
 		const tabUrl = target.kind === "dm-global"
 			? "/users/@me/messages/search/tabs"
 			: target.kind === "dm"
@@ -4751,7 +4770,7 @@ class MessageSearchTransport {
 			sort_by: "timestamp",
 			sort_order: "desc",
 			author_id: [String(userId)],
-			cursor: null,
+			cursor: page?.cursor ?? null,
 			limit: tabLimit
 		};
 		if (text) messageTab.content = text;
@@ -4782,6 +4801,7 @@ class MessageSearchTransport {
 			limit: perTarget
 		};
 		if (text) query.content = text;
+		if (page?.offset) query.offset = page.offset;
 		const url = target.kind === "dm"
 			? `/channels/${target.id}/messages/search`
 			: `/guilds/${target.id}/messages/search`;
@@ -4819,6 +4839,12 @@ class MessageSearchTransport {
 					await sleep(wait);
 					continue;
 				}
+				const status = Number(e?.status ?? e?.statusCode ?? 0);
+				if ((!status || status >= 500) && i < 1) {
+					this.log("transport", "transient error, retrying request", e);
+					await sleep(400);
+					continue;
+				}
 				throw e;
 			}
 		}
@@ -4828,68 +4854,131 @@ class MessageSearchTransport {
 	async run(targets, opts, onBatch, onDone) {
 		const token = ++this.token;
 		const alive = () => token === this.token;
-		const queue = targets.slice();
-		const collected = [];
+		const session = {
+			token,
+			opts,
+			states: targets.map((t) => ({ target: t, cursor: null, offset: 0, done: false, searched: false, lastFirstId: "" })),
+			collected: [],
+			seen: new Set(),
+			grand: 0,
+			errors: 0,
+			denied: 0,
+			errorSamples: []
+		};
+		this.session = session;
 
-		const cacheKey = `${opts.userId}|${opts.text ?? ""}`;
+		const targetFingerprint = `${targets.length}:${targets[0]?.id ?? ""}:${targets[targets.length - 1]?.id ?? ""}`;
+		const cacheKey = `${opts.userId}|${opts.text ?? ""}|${opts.perTarget}|${opts.totalLimit}|${targetFingerprint}`;
 		const cached = this.cache.get(cacheKey);
 		if (cached && Date.now() - cached.ts < SEARCH_CACHE_TTL_MS && cached.items.length) {
-			onBatch?.(cached.items.slice(), { done: 0, total: targets.length, found: cached.items.length, errors: 0, denied: 0 });
+			onBatch?.(cached.items.slice(), null);
 		}
-		const errorSamples = [];
-		let done = 0;
-		let denied = 0;
-		let errors = 0;
-		let grand = 0;
+
+		await this.runRound(session, Math.max(1, opts.totalLimit), onBatch);
+		if (!alive()) return;
+		this.cache.set(cacheKey, { ts: Date.now(), items: session.collected.slice(0, opts.totalLimit) });
+		if (this.cache.size > 30) this.cache.delete(this.cache.keys().next().value);
+		onDone?.({
+			total: session.grand,
+			found: session.collected.length,
+			denied: session.denied,
+			errors: session.errors,
+			errorSamples: session.errorSamples,
+			hasMore: this.hasMore()
+		});
+	}
+
+	hasMore() {
+		const s = this.session;
+		return !!(s && s.token === this.token && s.states.some((st) => !st.done));
+	}
+
+	async loadMore(onBatch, onDone) {
+		const session = this.session;
+		if (!session || session.token !== this.token) return false;
+		if (!session.states.some((st) => !st.done)) return false;
+		await this.runRound(session, Math.max(10, session.opts.totalLimit), onBatch);
+		if (session.token !== this.token) return false;
+		onDone?.({
+			total: session.grand,
+			found: session.collected.length,
+			denied: session.denied,
+			errors: session.errors,
+			hasMore: this.hasMore()
+		});
+		return true;
+	}
+
+	async runRound(session, roundLimit, onBatch) {
+		const alive = () => session.token === this.token;
+		const queue = session.states.filter((st) => !st.done);
+		const totalThisRound = queue.length;
+		let doneThisRound = 0;
+		let addedThisRound = 0;
 
 		const worker = async () => {
 			while (queue.length && alive()) {
-
-				if (collected.length >= opts.totalLimit) return;
-
+				if (addedThisRound >= roundLimit) return;
 				const cooldown = this.cooldownUntil - Date.now();
 				if (cooldown > 0) await sleep(Math.min(cooldown, 5000));
 				if (!alive()) return;
-				const t = queue.shift();
+				const st = queue.shift();
+				if (!st || st.done) continue;
 				try {
-					const r = await this.searchTarget(t, opts.userId, opts.text, opts.perTarget);
+					const r = await this.searchTarget(st.target, session.opts.userId, session.opts.text, session.opts.perTarget, { cursor: st.cursor, offset: st.offset });
 					if (!alive()) return;
-					grand += r.total;
-					for (const m of r.messages) collected.push(this.toItem(m, t));
-
-					collected.sort((a, b) => (snowflakeNewer(a.id, b.id) ? -1 : 1));
-					if (collected.length > opts.totalLimit) collected.length = opts.totalLimit;
+					const firstId = r.messages.length ? String(r.messages[0]?.id ?? "") : "";
+					const repeatPage = st.searched && firstId !== "" && firstId === st.lastFirstId;
+					if (!st.searched) session.grand += r.total;
+					st.searched = true;
+					st.lastFirstId = firstId;
+					st.cursor = r.cursor ?? null;
+					st.offset += r.messages.length;
+					if (repeatPage) {
+						st.done = true;
+					} else {
+						for (const m of r.messages) {
+							const item = this.toItem(m, st.target);
+							if (session.seen.has(item.id)) continue;
+							session.seen.add(item.id);
+							session.collected.push(item);
+							addedThisRound++;
+						}
+						const moreViaCursor = !!st.cursor;
+						const moreViaOffset = !st.cursor && r.messages.length >= session.opts.perTarget && st.offset < r.total;
+						if (!r.messages.length || (!moreViaCursor && !moreViaOffset)) st.done = true;
+						session.collected.sort((a, b) => (snowflakeNewer(a.id, b.id) ? -1 : 1));
+					}
 				} catch (e) {
 					if (!alive()) return;
-					if (e && (e.status === 403 || e.status === 404)) denied++;
+					st.done = true;
+					if (e && (e.status === 403 || e.status === 404)) session.denied++;
 					else {
-						errors++;
-						if (errorSamples.length < 3) errorSamples.push(String(e?.message ?? e).slice(0, 200));
-						this.log("transport", `target ${t.id} failed`, e);
+						session.errors++;
+						if (session.errorSamples.length < 3) session.errorSamples.push(String(e?.message ?? e).slice(0, 200));
+						this.log("transport", `target ${st.target.id} failed`, e);
 					}
 				}
-				done++;
+				doneThisRound++;
 				if (alive()) {
-					onBatch?.(collected.slice(), { done, total: targets.length, found: collected.length, errors, denied });
+					onBatch?.(session.collected.slice(), { done: doneThisRound, total: totalThisRound, found: session.collected.length, errors: session.errors, denied: session.denied });
 				}
 			}
 		};
 
 		const workers = [];
-		const n = Math.max(1, Math.min(opts.concurrency ?? 6, 8));
+		const n = Math.max(1, Math.min(session.opts.concurrency ?? 6, 8));
 		for (let i = 0; i < n; i++) workers.push(worker());
 		await Promise.all(workers);
-		if (alive()) {
-			this.cache.set(cacheKey, { ts: Date.now(), items: collected.slice() });
-			if (this.cache.size > 30) this.cache.delete(this.cache.keys().next().value);
-			onDone?.({ total: grand, found: collected.length, denied, errors, errorSamples });
-		}
 	}
-
 	toItem(message, target) {
-		const content = String(message?.content ?? "");
+		let content = String(message?.content ?? "").replace(/\s+/g, " ").trim();
+		if (!content && Array.isArray(message?.attachments) && message.attachments.length) {
+			content = message.attachments.map((a) => a?.filename ?? "").filter(Boolean).join(", ");
+		}
+		if (!content && Array.isArray(message?.embeds) && message.embeds.length) content = "Embed";
 		const channelId = String(message?.channel_id ?? "");
-		const channel = (target.kind === "dm-global" || target.kind === "dm") ? DataService.getChannel(channelId) : null;
+		const channel = DataService.getChannel(channelId);
 		const privateName = channel?.name || target.name;
 		let iconUrl = null;
 		if (target.kind === "guild") {
@@ -4908,10 +4997,12 @@ class MessageSearchTransport {
 			id: String(message?.id ?? "0"),
 			channelId,
 			guildId: target.kind === "guild" ? target.id : (channel?.guild_id ?? null),
-			targetName: target.kind === "guild" ? target.name : privateName,
+			targetName: target.kind === "guild"
+				? (channel?.name ? `#${channel.name} · ${target.name}` : target.name)
+				: privateName,
 			targetKind: target.kind,
 			iconUrl,
-			content: truncate(content.replace(/\s+/g, " "), 180),
+			content: truncate(content, 180),
 			ts: snowflakeTime(message?.id),
 			jump: target.kind === "guild"
 				? `/channels/${target.id}/${message?.channel_id}/${message?.id}`
@@ -5288,6 +5379,7 @@ class SwitcherIntegration {
 	}
 
 	handleInput() {
+		this.lastInputValue = String(this.input?.value ?? "");
 		this.evaluateDebounced();
 	}
 
@@ -5302,7 +5394,7 @@ class SwitcherIntegration {
 		}
 		this.activate();
 		const parsed = parseAmpQuery(value);
-		Journal.info("switcher", "query", { value, mode: parsed.mode });
+		Journal.debug("switcher", "query", { value, mode: parsed.mode });
 		this.plugin.dispatchQuery(parsed);
 	}
 
@@ -5324,6 +5416,7 @@ class SwitcherIntegration {
 		this.clearNativeHiding();
 		try { this.input?.removeAttribute("aria-activedescendant"); } catch (e) {}
 		this.selected = -1;
+		this.lastRenderedSelected = -1;
 		this.itemCount = 0;
 		this.lastView = null;
 		if (this.host) {
@@ -5446,6 +5539,11 @@ class SwitcherIntegration {
 			if (!row || !host.contains(row)) return;
 			this.plugin.activateItem(Number(row.dataset.index));
 		});
+		host.addEventListener("scroll", () => {
+			try {
+				if (host.scrollTop + host.clientHeight >= host.scrollHeight - 90) this.plugin.requestMoreMessages();
+			} catch (e) {}
+		});
 		target.parent.insertBefore(host, target.before);
 		this.host = host;
 		return host;
@@ -5470,17 +5568,24 @@ class SwitcherIntegration {
 		const host = this.ensureHost();
 		if (!host) return;
 		this.hideNativeContent();
-		Journal.info("switcher", "render", { rows: (view.rows ?? []).length, empty: !!view.empty, standalone: host.classList.contains(`${NS}-host-standalone`) });
+		Journal.debug("switcher", "render", { rows: (view.rows ?? []).length, empty: !!view.empty, standalone: host.classList.contains(`${NS}-host-standalone`) });
+		const keepScroll = this.selected === this.lastRenderedSelected && host.scrollTop > 0;
+		const prevScrollTop = host.scrollTop;
 		host.textContent = "";
 		if (view.header) host.appendChild(view.header);
 		for (const row of view.rows ?? []) host.appendChild(row);
 		if (view.empty) host.appendChild(view.empty);
 		if (view.footer) host.appendChild(view.footer);
 		this.itemCount = (view.rows ?? []).length;
-		this.updateSelectionDom();
+		if (keepScroll) host.scrollTop = prevScrollTop;
+		this.lastRenderedSelected = this.selected;
+		this.updateSelectionDom(!keepScroll);
+		try {
+			if (host.scrollHeight <= host.clientHeight + 4) this.plugin.requestMoreMessages();
+		} catch (e) {}
 	}
 
-	updateSelectionDom() {
+	updateSelectionDom(allowScroll = true) {
 		if (!this.host) return;
 		const rows = this.host.querySelectorAll(`.${NS}-row`);
 		rows.forEach((r, i) => r.classList.toggle(`${NS}-selected`, i === this.selected));
@@ -5491,6 +5596,7 @@ class SwitcherIntegration {
 				else this.input.removeAttribute("aria-activedescendant");
 			} catch (e) {}
 		}
+		if (!allowScroll) return;
 		try { sel?.scrollIntoView?.({ block: "nearest" }); } catch (e) {}
 	}
 
@@ -5947,6 +6053,10 @@ class UserGlobalSearch {
 		this.currentResults = [];
 		this.currentParsed = null;
 		this.debouncedSearch = null;
+		this.debouncedMessages = null;
+		this.loadingMore = false;
+		this.messageRenderer = null;
+		this.messageTargetCount = 0;
 	}
 
 	loadSettings() {
@@ -5993,6 +6103,7 @@ class UserGlobalSearch {
 		this.transport = new MessageSearchTransport(ModuleRegistry.get("rest"), (s, m, d) => Journal.debug(s, m, d));
 
 		this.debouncedSearch = debounce((parsed) => this.runUserSearch(parsed), this.settings.debounceMs);
+		this.debouncedMessages = debounce((parsed) => this.runMessageFlow(parsed), Math.max(400, this.settings.debounceMs));
 
 		this.integration = new SwitcherIntegration(this);
 		this.integration.start();
@@ -6015,6 +6126,7 @@ class UserGlobalSearch {
 		this.integration = null;
 		try { this.transport?.cancelAll(); } catch (e) {}
 		try { this.debouncedSearch?.cancel?.(); } catch (e) {}
+		try { this.debouncedMessages?.cancel?.(); } catch (e) {}
 		if (this.styleNode) {
 			try { this.styleNode.remove(); } catch (e) {}
 			this.styleNode = null;
@@ -6065,17 +6177,22 @@ class UserGlobalSearch {
 		try {
 			switch (parsed.mode) {
 				case "browse":
+					this.debouncedSearch?.cancel?.();
+					this.debouncedMessages?.cancel?.();
 					this.runUserSearch(parsed);
 					break;
 				case "pick":
+					this.debouncedMessages?.cancel?.();
 					this.debouncedSearch?.(parsed);
 					break;
 				case "messages":
 					if (!this.settings.messageSearchEnabled) {
+						this.debouncedMessages?.cancel?.();
 						this.debouncedSearch?.({ ...parsed, mode: "pick" });
 						break;
 					}
-					this.runMessageFlow(parsed);
+					this.debouncedSearch?.cancel?.();
+					this.debouncedMessages?.(parsed);
 					break;
 				default:
 					break;
@@ -6122,7 +6239,7 @@ class UserGlobalSearch {
 			}
 		}
 		const cachedUsers = DataService.cachedUsers();
-		Journal.info("data", "user sources", {
+		Journal.debug("data", "user sources", {
 			query: String(userQuery ?? ""), friends: friends.length,
 			dmUsers: dmUsers.length, guildMembers: guildMembers.length,
 			cachedUsers: cachedUsers.length
@@ -6133,6 +6250,9 @@ class UserGlobalSearch {
 	runUserSearch(parsed) {
 		if (!this.integration?.active) return;
 		try {
+			this.transport?.cancelAll();
+			this.loadingMore = false;
+			this.messageRenderer = null;
 			const sources = this.collectSources(parsed.userQuery);
 			const candidates = buildCandidates(sources);
 			const results = searchUsers(parsed.userQuery ?? "", candidates, {
@@ -6275,6 +6395,10 @@ class UserGlobalSearch {
 		};
 
 		this.integration.selected = 0;
+		this.loadingMore = true;
+		this.messageRenderer = renderRows;
+		this.messageTargetCount = targets.length;
+		this.transport?.cancelAll();
 		renderRows([], { done: 0, total: targets.length, found: 0 });
 
 		try {
@@ -6288,9 +6412,20 @@ class UserGlobalSearch {
 					concurrency: this.settings.searchConcurrency
 				},
 				(items, progress) => renderRows(items, progress),
-				(summary) => Journal.info("search", "message search finished", summary)
+				(summary) => {
+					this.loadingMore = false;
+					Journal.info("search", "message search finished", summary);
+					renderRows(this.currentResults.map((r) => r.item), {
+						done: targets.length,
+						total: targets.length,
+						found: summary.total > 0 ? summary.total : summary.found,
+						errors: summary.errors,
+						denied: summary.denied
+					});
+				}
 			);
 		} catch (e) {
+			this.loadingMore = false;
 			Journal.error("search", "message search failed", e);
 		}
 	}
@@ -6421,6 +6556,35 @@ class UserGlobalSearch {
 		} catch (e) {}
 	}
 
+	requestMoreMessages() {
+		if (this.loadingMore) return;
+		if (this.currentParsed?.mode !== "messages" || !this.messageRenderer) return;
+		if (!this.transport || typeof this.transport.hasMore !== "function" || !this.transport.hasMore()) return;
+		const renderRows = this.messageRenderer;
+		const targetCount = this.messageTargetCount ?? 0;
+		this.loadingMore = true;
+		Promise.resolve(
+			this.transport.loadMore(
+				(items, progress) => renderRows(items, progress),
+				(summary) => {
+					this.loadingMore = false;
+					renderRows(this.currentResults.map((r) => r.item), {
+						done: targetCount,
+						total: targetCount,
+						found: summary.total > 0 ? summary.total : summary.found,
+						errors: summary.errors,
+						denied: summary.denied
+					});
+				}
+			)
+		).then((started) => {
+			if (started === false) this.loadingMore = false;
+		}).catch((e) => {
+			this.loadingMore = false;
+			Journal.error("search", "loadMore failed", e);
+		});
+	}
+
 	requestMessagesMode() {
 		if (!this.currentParsed || this.currentParsed.mode === "messages") return;
 		const entry = this.currentResults[this.integration?.selected >= 0 ? this.integration.selected : 0];
@@ -6492,6 +6656,7 @@ class UserGlobalSearch {
 		this.saveSettings();
 
 		this.debouncedSearch = debounce((parsed) => this.runUserSearch(parsed), this.settings.debounceMs);
+		this.debouncedMessages = debounce((parsed) => this.runMessageFlow(parsed), Math.max(400, this.settings.debounceMs));
 	}
 
 	renderControls() {
