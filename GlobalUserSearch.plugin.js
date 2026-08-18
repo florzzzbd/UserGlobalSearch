@@ -1,7 +1,7 @@
 /**
  * @name UserGlobalSearch
  * @author florzzz
- * @version 1.0.2
+ * @version 1.0.21
  * @description Global user search in the Quick Switcher (Ctrl+K) via the & symbol: pick a person, see their recent messages across all mutual servers, DMs and group chats.
  * @invite YPuDp5SXN
  * @donate https://www.donationalerts.com/r/florzzzzzzz
@@ -14,8 +14,14 @@
 "use strict";
 
 const PLUGIN_NAME = "UserGlobalSearch";
-const PLUGIN_VERSION = "1.0.2";
+const PLUGIN_VERSION = "1.0.21";
 const PLUGIN_AUTHOR = "florzzz";
+const PLUGIN_FILE_NAME = "GlobalUserSearch.plugin.js";
+const UPDATE_URL = "https://raw.githubusercontent.com/florzzzbd/UserGlobalSearch/main/GlobalUserSearch.plugin.js";
+const UPDATE_CHECK_DELAY_MS = 2500;
+
+const NodeFS = require("fs");
+const NodePath = require("path");
 
 const NS = "ugs2";
 
@@ -3430,6 +3436,122 @@ const Journal = {
 	clear() { this.records.length = 0; }
 };
 
+function parsePluginMeta(source) {
+	const match = String(source ?? "").match(/\/\*\*([\s\S]*?)\*\//);
+	if (!match) return {};
+	const meta = {};
+	for (const line of match[1].split(/\r?\n/)) {
+		const field = line.match(/^\s*\*\s*@([A-Za-z][\w-]*)\s+(.+?)\s*$/);
+		if (field) meta[field[1]] = field[2];
+	}
+	return meta;
+}
+
+function parseVersion(version) {
+	const text = String(version ?? "").trim().replace(/^v/i, "");
+	const split = text.split("-", 2);
+	const core = split[0].split(".").map((part) => {
+		const match = String(part).match(/^\d+/);
+		return match ? Number(match[0]) : 0;
+	});
+	return { core, pre: split.length > 1 ? split[1].split(".") : [] };
+}
+
+function comparePluginVersions(left, right) {
+	const a = parseVersion(left);
+	const b = parseVersion(right);
+	const width = Math.max(a.core.length, b.core.length, 3);
+	for (let i = 0; i < width; i++) {
+		const av = a.core[i] ?? 0;
+		const bv = b.core[i] ?? 0;
+		if (av !== bv) return av > bv ? 1 : -1;
+	}
+	if (!a.pre.length && !b.pre.length) return 0;
+	if (!a.pre.length) return 1;
+	if (!b.pre.length) return -1;
+	const preWidth = Math.max(a.pre.length, b.pre.length);
+	for (let i = 0; i < preWidth; i++) {
+		if (a.pre[i] === undefined) return -1;
+		if (b.pre[i] === undefined) return 1;
+		const an = /^\d+$/.test(a.pre[i]) ? Number(a.pre[i]) : null;
+		const bn = /^\d+$/.test(b.pre[i]) ? Number(b.pre[i]) : null;
+		if (an !== null && bn !== null && an !== bn) return an > bn ? 1 : -1;
+		if (an !== null && bn === null) return -1;
+		if (an === null && bn !== null) return 1;
+		if (a.pre[i] !== b.pre[i]) return a.pre[i] > b.pre[i] ? 1 : -1;
+	}
+	return 0;
+}
+
+function validatePluginUpdateSource(source) {
+	const text = String(source ?? "");
+	if (text.length < 1000 || !text.includes("module.exports")) {
+		throw new Error("Downloaded update is not a valid plugin file");
+	}
+	const meta = parsePluginMeta(text);
+	if (meta.name !== PLUGIN_NAME) {
+		throw new Error(`Update name mismatch: expected ${PLUGIN_NAME}, got ${meta.name ?? "missing"}`);
+	}
+	if (!/^v?\d+(?:\.\d+){1,3}(?:-[0-9A-Za-z.-]+)?$/.test(String(meta.version ?? "").trim())) {
+		throw new Error("Downloaded update has no valid version");
+	}
+	return { source: text, meta, version: String(meta.version).trim() };
+}
+
+function resolveInstalledPluginPath() {
+	const folder = String(globalThis.BdApi?.Plugins?.folder ?? "");
+	if (!folder) throw new Error("BetterDiscord plugins folder is unavailable");
+	try {
+		if (typeof __filename === "string" && /\.plugin\.js$/i.test(__filename)) {
+			const fileDir = NodePath.resolve(NodePath.dirname(__filename));
+			if (fileDir === NodePath.resolve(folder)) return __filename;
+		}
+	} catch (e) {}
+	try {
+		for (const file of NodeFS.readdirSync(folder)) {
+			if (!/\.plugin\.js$/i.test(file)) continue;
+			const candidate = NodePath.join(folder, file);
+			const head = NodeFS.readFileSync(candidate, "utf8").slice(0, 4096);
+			if (parsePluginMeta(head).name === PLUGIN_NAME) return candidate;
+		}
+	} catch (e) {}
+	return NodePath.join(folder, PLUGIN_FILE_NAME);
+}
+
+async function fetchPluginUpdateSource(url = UPDATE_URL) {
+	const separator = url.includes("?") ? "&" : "?";
+	const requestUrl = `${url}${separator}_ugs=${Date.now()}`;
+	const api = globalThis.BdApi;
+	const fetcher = typeof api?.Net?.fetch === "function"
+		? (input, init) => api.Net.fetch(input, init)
+		: (typeof fetch === "function" ? fetch : null);
+	if (!fetcher) throw new Error("No network fetch API is available");
+	const response = await fetcher(requestUrl, { cache: "no-store" });
+	const status = Number(response?.status ?? 0);
+	if (!response || response.ok === false || status >= 400) {
+		throw new Error(`Update request failed with HTTP ${status || "unknown"}`);
+	}
+	return String(await response.text());
+}
+
+async function writePluginUpdate(targetPath, source) {
+	const checked = validatePluginUpdateSource(source);
+	const tempPath = `${targetPath}.update-${Date.now()}.tmp`;
+	await NodeFS.promises.writeFile(tempPath, checked.source, "utf8");
+	const verification = await NodeFS.promises.readFile(tempPath, "utf8");
+	validatePluginUpdateSource(verification);
+	try {
+		await NodeFS.promises.rename(tempPath, targetPath);
+	} catch (renameError) {
+		try {
+			await NodeFS.promises.writeFile(targetPath, verification, "utf8");
+		} finally {
+			try { await NodeFS.promises.unlink(tempPath); } catch (e) {}
+		}
+	}
+	return checked;
+}
+
 function safeSerialize(value) {
 	try {
 		if (value instanceof Error) {
@@ -6057,6 +6179,12 @@ class UserGlobalSearch {
 		this.loadingMore = false;
 		this.messageRenderer = null;
 		this.messageTargetCount = 0;
+		this.updateCheckTimer = null;
+		this.updateReloadTimer = null;
+		this.updateCheckInFlight = false;
+		this.updateOfferedVersion = null;
+		this.installingUpdate = false;
+		this.stopped = true;
 	}
 
 	loadSettings() {
@@ -6090,6 +6218,7 @@ class UserGlobalSearch {
 	}
 
 	start() {
+		this.stopped = false;
 		Journal.info("core", `starting v${PLUGIN_VERSION}`);
 		Journal.debugEnabled = !!this.settings.debugLogs;
 
@@ -6115,10 +6244,17 @@ class UserGlobalSearch {
 			this.saveSettings();
 			try { BdApi.UI.showToast(this.t("toastWelcome"), { type: "success" }); } catch (e) {}
 		}
+
+		this.scheduleUpdateCheck();
 		Journal.info("core", "started");
 	}
 
 	stop() {
+		this.stopped = true;
+		if (this.updateCheckTimer) clearTimeout(this.updateCheckTimer);
+		if (this.updateReloadTimer) clearTimeout(this.updateReloadTimer);
+		this.updateCheckTimer = null;
+		this.updateReloadTimer = null;
 		Journal.info("core", "stopped");
 		try { this.unwatchLocale?.(); } catch (e) {}
 		this.unwatchLocale = null;
@@ -6130,6 +6266,90 @@ class UserGlobalSearch {
 		if (this.styleNode) {
 			try { this.styleNode.remove(); } catch (e) {}
 			this.styleNode = null;
+		}
+	}
+
+	scheduleUpdateCheck() {
+		if (this.updateCheckTimer) clearTimeout(this.updateCheckTimer);
+		this.updateCheckTimer = setTimeout(() => {
+			this.updateCheckTimer = null;
+			this.checkForUpdates();
+		}, UPDATE_CHECK_DELAY_MS);
+		try { this.updateCheckTimer.unref?.(); } catch (e) {}
+	}
+
+	async checkForUpdates() {
+		if (this.updateCheckInFlight || this.stopped) return false;
+		this.updateCheckInFlight = true;
+		try {
+			const remoteSource = await fetchPluginUpdateSource();
+			if (this.stopped) return false;
+			const update = validatePluginUpdateSource(remoteSource);
+			if (comparePluginVersions(update.version, PLUGIN_VERSION) <= 0) {
+				Journal.debug("updater", `already current: local ${PLUGIN_VERSION}, remote ${update.version}`);
+				return false;
+			}
+			if (this.updateOfferedVersion === update.version) return true;
+			this.updateOfferedVersion = update.version;
+			this.showUpdateNotification(update);
+			return true;
+		} catch (e) {
+			Journal.warn("updater", "failed to check for updates", e);
+			if (!this.stopped) {
+				try { BdApi.UI.showToast(`[${PLUGIN_NAME}] Failed to check for updates`, { type: "error" }); } catch (e2) {}
+			}
+			return false;
+		} finally {
+			this.updateCheckInFlight = false;
+		}
+	}
+
+	showUpdateNotification(update) {
+		const install = () => this.installUpdate(update);
+		Journal.info("updater", `update ${update.version} is available`);
+		try {
+			if (typeof BdApi?.UI?.showNotification === "function") {
+				BdApi.UI.showNotification({
+					title: `${PLUGIN_NAME} Update Available!`,
+					content: `Update ${update.version} is now available!`,
+					actions: [{ label: "Update", onClick: install }]
+				});
+				return;
+			}
+		} catch (e) {
+			Journal.warn("updater", "notification failed", e);
+		}
+		try {
+			BdApi.UI.showConfirmationModal(
+				`${PLUGIN_NAME} Update Available!`,
+				`Update ${update.version} is now available!`,
+				{ confirmText: "Update", cancelText: "Later", onConfirm: install }
+			);
+		} catch (e) {
+			Journal.error("updater", "could not show update prompt", e);
+		}
+	}
+
+	async installUpdate(update) {
+		if (this.installingUpdate) return;
+		this.installingUpdate = true;
+		try {
+			const checked = validatePluginUpdateSource(update.source);
+			if (comparePluginVersions(checked.version, PLUGIN_VERSION) <= 0) {
+				throw new Error("The downloaded file is not newer than the installed version");
+			}
+			const targetPath = resolveInstalledPluginPath();
+			await writePluginUpdate(targetPath, checked.source);
+			try { BdApi.UI.showToast(`[${PLUGIN_NAME}] Updated to ${checked.version}`, { type: "success" }); } catch (e) {}
+			Journal.info("updater", `installed ${checked.version} to ${targetPath}`);
+			this.updateReloadTimer = setTimeout(() => {
+				this.updateReloadTimer = null;
+				try { BdApi.Plugins.reload(PLUGIN_NAME); } catch (e) {}
+			}, 500);
+		} catch (e) {
+			Journal.error("updater", "failed to install update", e);
+			try { BdApi.UI.showToast(`[${PLUGIN_NAME}] Failed to install update`, { type: "error", forceShow: true }); } catch (e2) {}
+			this.installingUpdate = false;
 		}
 	}
 
@@ -6773,6 +6993,9 @@ module.exports.__internals = {
 	PLUGIN_NAME,
 	PLUGIN_VERSION,
 	PLUGIN_AUTHOR,
+	PLUGIN_FILE_NAME,
+	UPDATE_URL,
+	UPDATE_CHECK_DELAY_MS,
 	DEFAULT_SETTINGS,
 	SETTING_LIMITS,
 	SCORE,
@@ -6802,6 +7025,13 @@ module.exports.__internals = {
 	debounce,
 	clampInt,
 	toInt,
+	parsePluginMeta,
+	parseVersion,
+	comparePluginVersions,
+	validatePluginUpdateSource,
+	resolveInstalledPluginPath,
+	fetchPluginUpdateSource,
+	writePluginUpdate,
 	safeSerialize,
 	safeCall,
 
