@@ -1,4 +1,4 @@
-# AmpSearch
+# UserGlobalSearch
 
 ![Version](https://img.shields.io/badge/version-1.0.22-5865F2) ![License](https://img.shields.io/badge/license-MIT-green)
 
