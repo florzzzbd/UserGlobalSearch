@@ -1,6 +1,6 @@
 {
 	"name": "userglobalsearch",
-	"version": "1.0.1",
+	"version": "1.0.21",
 	"description": "BetterDiscord plugin: the & symbol in Quick Switcher - global user search across mutual servers and DMs, natively integrated UI",
 	"author": "florzzzbd",
 	"license": "MIT",
