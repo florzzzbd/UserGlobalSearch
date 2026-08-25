@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.20.3
 
 ### Fixed
 - One rate-limit log line was still in Russian (`429 rate limit, повтор через…`) - console output is English across the board now
