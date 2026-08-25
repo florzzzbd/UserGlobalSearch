@@ -1,106 +1,76 @@
 # UserGlobalSearch
 
-![Version](https://img.shields.io/badge/version-1.0.22-5865F2) ![License](https://img.shields.io/badge/license-MIT-green)
+BetterDiscord-плагин: глобальный поиск людей и их сообщений через `&` в Quick Switcher.
 
-AmpSearch adds the **&** trigger to Discord's Quick Switcher. Find people across mutual servers, DMs and group chats, then search their recent messages without leaving the native Quick Switcher UI.
+Открываешь Ctrl+K, вводишь `&ник` — видишь человека со всех общих серверов, ЛС и групп. Жмёшь Enter — ищешь его сообщения по всем чатам сразу. Всё внутри нативного интерфейса Discord.
 
-### Download
+## Зачем это
 
-Raw file: [AmpSearch.plugin.js](https://raw.githubusercontent.com/florzzzbd/AmpSearch/refs/heads/main/AmpSearch.plugin.js)
+Стандартный поиск Discord находит людей только на текущем сервере. Если помнишь ник, но не помнишь, на каком сервере человек — придётся листать всё вручную. Этот плагин делает это за тебя.
 
-*"Discord" is a trademark of Discord Inc. This project is not affiliated with Discord Inc. See the full [trademark notice](#trademark-notice).*
+## Установка
 
-## Features
-
-### The & trigger
-
-The ampersand appears beside Discord's built-in Quick Switcher filters. Open the switcher with Ctrl+K and type `&` to activate AmpSearch.
-
-### People search
-
-- Friends are ranked first, followed by DM partners and mutual server members.
-- Matches display names, usernames and server nicknames.
-- Prefix, word-start, substring and acronym matching.
-- RU ↔ EN transliteration: `&соня` can find "Sonya", and `&sonya` can find "Соня".
-- Optional status dots, badges, context lines and compact mode.
-
-### Message search
-
-Press Enter or Tab on a selected user to search that person's messages:
-
-- DMs and group chats use Discord's global private-message search.
-- Server searches are limited to servers you share with that person.
-- Requests are debounced, cancellable, rate-limit aware and briefly cached.
-- Results load in batches and continue automatically when you reach the bottom.
-- Press Enter on a message to jump directly to it.
-
-### Native interface
-
-AmpSearch renders inside Discord's Quick Switcher and follows Discord theme variables. The settings panel controls user limits, message limits, target count, request concurrency and display options.
-
-### Languages
-
-The interface supports English, Russian and Ukrainian.
-
-## Installation
-
-1. Install [BetterDiscord](https://betterdiscord.app/) if needed.
-2. Download `AmpSearch.plugin.js` from the link above.
-3. Move it to the BetterDiscord plugins folder:
+1. Ставим [BetterDiscord](https://betterdiscord.app/), если ещё нет.
+2. Качаем [GlobalUserSearch.plugin.js](https://raw.githubusercontent.com/florzzzbd/UserGlobalSearch/main/GlobalUserSearch.plugin.js).
+3. Кидаешь в папку плагинов:
    - Windows: `%AppData%/BetterDiscord/plugins`
    - macOS: `~/Library/Application Support/BetterDiscord/plugins`
    - Linux: `~/.config/BetterDiscord/plugins`
-4. Remove any old `GlobalUserSearch.plugin.js` or `UserGlobalSearch.plugin.js` copy.
-5. Enable AmpSearch in Settings → Plugins.
-6. Press Ctrl+K and type `&`.
+4. Включаешь в Settings → Plugins.
+5. Ctrl+K, вводишь `&` — готово.
 
-## Usage
+Если раньше стояла старая версия под другим именем (AmpSearch / UserGlobalSearch) — удалите старый файл, чтобы не было дублей.
 
-| Input / key | Action |
+## Как пользоваться
+
+| Что вводишь / жмёшь | Что происходит |
 |---|---|
-| Ctrl+K | Open Quick Switcher |
-| `&` | Browse people |
-| `&name` | Filter people |
-| Enter / Tab on a user | Show that user's messages |
-| `&name text` | Search that user's messages by text |
-| ↑ / ↓ | Move through results |
-| Enter on a message | Jump to the message |
-| Ctrl+Enter / Cmd+Enter | Open the selected user's DM or profile |
-| Esc | Close Quick Switcher |
+| `&` | Список людей со всех серверов и чатов |
+| `&ник` | Фильтр по имени (понимает транслит: `&соня` найдёт Sonya) |
+| Enter / Tab на человеке | Его сообщения |
+| `&ник текст` | Поиск его сообщений по тексту |
+| Enter на сообщении | Прыжок к сообщению |
+| Ctrl+Enter | Открыть ЛС или профиль |
+| Esc | Закрыть |
 
-## FAQ
+Друзья всегда вверху списка. Рядом с именем — бейджи (ДРУГ / СЕРВЕР / ЛС / БОТ), точка статуса и строка контекста («Друг · 3 сервера · ЛС»). Всё это можно отключить в настройках.
 
-**Can AmpSearch find messages from servers I am not in?**
+## Настройки
 
-No. Discord only returns messages you already have permission to access.
+Всё в Settings → Plugins → UserGlobalSearch. Основное:
 
-**Why does the target counter differ between users?**
+- лимиты на количество результатов (людей, сообщений, серверов)
+- задержка поиска и число параллельных запросов
+- транслитерация вкл/выкл
+- внешний вид: бейджи, точки статуса, компактный режим
 
-AmpSearch searches one private-message target plus each mutual server. The target count therefore depends on what you share with the selected user.
+Если поиск сообщений вдруг не работает — в настройках есть кнопка самодиагностики. Она прогоняет проверки и показывает, что именно сломалось. Отчёт можно скопировать и прислать в issues.
 
-**Why can message search take a moment on large servers?**
+## Частые вопросы
 
-Discord performs the search on its servers. AmpSearch runs allowed requests in parallel and renders results as they arrive.
+**Найдёт ли сообщения с серверов, где меня нет?**
 
-## Running tests
+Нет. Discord отдаёт только то, к чему у тебя уже есть доступ.
 
-```bash
+**Почему у разных людей разное число «целей» поиска?**
+
+Считаются ЛС + общие серверы. Чем больше общего с человеком — тем дольше поиск.
+
+**Почему на больших серверах поиск небыстрый?**
+
+Поиск делает сам Discord на своих серверах, плагин лишь параллелит запросы и собирает результаты.
+
+## Разработка
+
+```
 npm test
 npm run check
 ```
 
-## Reporting issues
+Баги и идеи — в [Issues](https://github.com/florzzzbd/UserGlobalSearch/issues). Пулл-реквесты приветствуются.
 
-Open an issue on the [Issues page](https://github.com/florzzzbd/AmpSearch/issues) with reproduction steps, your Discord build and any relevant English console error.
+## Лицензия
 
-## Contributing
+MIT. См. [LICENSE](LICENSE).
 
-Bug reports, feature requests and pull requests are welcome.
-
-## License
-
-MIT. See [LICENSE](LICENSE).
-
-## Trademark notice
-
-"Discord" is a trademark of Discord Inc. AmpSearch is an unofficial third-party project and is not affiliated with, sponsored by or endorsed by Discord Inc. BetterDiscord is a third-party client modification and is also not affiliated with Discord Inc.
+"Discord" — товарный знак Discord Inc. Проект не связан с Discord Inc. BetterDiscord — сторонняя модификация клиента, тоже не связана с Discord Inc.
