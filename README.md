@@ -1,76 +1,28 @@
 # UserGlobalSearch
 
-BetterDiscord-плагин: глобальный поиск людей и их сообщений через `&` в Quick Switcher.
+Global user search for BetterDiscord. Type `&` in the Quick Switcher (Ctrl+K) to find people across all your mutual servers, DMs and group chats - then jump straight into their recent messages without leaving the native UI.
 
-Открываешь Ctrl+K, вводишь `&ник` — видишь человека со всех общих серверов, ЛС и групп. Жмёшь Enter — ищешь его сообщения по всем чатам сразу. Всё внутри нативного интерфейса Discord.
+## Install
 
-## Зачем это
+1. Download [GlobalUserSearch.plugin.js](https://raw.githubusercontent.com/florzzzbd/UserGlobalSearch/main/GlobalUserSearch.plugin.js)
+2. Drop it into your BetterDiscord plugins folder (Settings -> Plugins -> Open Plugin Folder)
+3. Enable it in the plugins list
 
-Стандартный поиск Discord находит людей только на текущем сервере. Если помнишь ник, но не помнишь, на каком сервере человек — придётся листать всё вручную. Этот плагин делает это за тебя.
+## Usage
 
-## Установка
+Type `&` followed by a name in the Quick Switcher:
 
-1. Ставим [BetterDiscord](https://betterdiscord.app/), если ещё нет.
-2. Качаем [GlobalUserSearch.plugin.js](https://raw.githubusercontent.com/florzzzbd/UserGlobalSearch/main/GlobalUserSearch.plugin.js).
-3. Кидаешь в папку плагинов:
-   - Windows: `%AppData%/BetterDiscord/plugins`
-   - macOS: `~/Library/Application Support/BetterDiscord/plugins`
-   - Linux: `~/.config/BetterDiscord/plugins`
-4. Включаешь в Settings → Plugins.
-5. Ctrl+K, вводишь `&` — готово.
+- `&name` - pick a person, see friends first, then DMs and server members
+- `&name text` - search that person's messages containing `text` across all servers and chats
 
-Если раньше стояла старая версия под другим именем (AmpSearch / UserGlobalSearch) — удалите старый файл, чтобы не было дублей.
+Transliteration is built in, so `соня` finds `Sonya` and `sonya` finds `Соня`. Results render natively - your Discord theme applies automatically.
 
-## Как пользоваться
+If someone reports the message search not working on their build, there is a self-test button in the plugin settings that checks the Discord modules and prints a report you can paste into an issue.
 
-| Что вводишь / жмёшь | Что происходит |
-|---|---|
-| `&` | Список людей со всех серверов и чатов |
-| `&ник` | Фильтр по имени (понимает транслит: `&соня` найдёт Sonya) |
-| Enter / Tab на человеке | Его сообщения |
-| `&ник текст` | Поиск его сообщений по тексту |
-| Enter на сообщении | Прыжок к сообщению |
-| Ctrl+Enter | Открыть ЛС или профиль |
-| Esc | Закрыть |
+## Issues
 
-Друзья всегда вверху списка. Рядом с именем — бейджи (ДРУГ / СЕРВЕР / ЛС / БОТ), точка статуса и строка контекста («Друг · 3 сервера · ЛС»). Всё это можно отключить в настройках.
+Found a bug or the plugin stopped working after a Discord update? Open an issue: https://github.com/florzzzbd/UserGlobalSearch/issues
 
-## Настройки
+## License
 
-Всё в Settings → Plugins → UserGlobalSearch. Основное:
-
-- лимиты на количество результатов (людей, сообщений, серверов)
-- задержка поиска и число параллельных запросов
-- транслитерация вкл/выкл
-- внешний вид: бейджи, точки статуса, компактный режим
-
-Если поиск сообщений вдруг не работает — в настройках есть кнопка самодиагностики. Она прогоняет проверки и показывает, что именно сломалось. Отчёт можно скопировать и прислать в issues.
-
-## Частые вопросы
-
-**Найдёт ли сообщения с серверов, где меня нет?**
-
-Нет. Discord отдаёт только то, к чему у тебя уже есть доступ.
-
-**Почему у разных людей разное число «целей» поиска?**
-
-Считаются ЛС + общие серверы. Чем больше общего с человеком — тем дольше поиск.
-
-**Почему на больших серверах поиск небыстрый?**
-
-Поиск делает сам Discord на своих серверах, плагин лишь параллелит запросы и собирает результаты.
-
-## Разработка
-
-```
-npm test
-npm run check
-```
-
-Баги и идеи — в [Issues](https://github.com/florzzzbd/UserGlobalSearch/issues). Пулл-реквесты приветствуются.
-
-## Лицензия
-
-MIT. См. [LICENSE](LICENSE).
-
-"Discord" — товарный знак Discord Inc. Проект не связан с Discord Inc. BetterDiscord — сторонняя модификация клиента, тоже не связана с Discord Inc.
+MIT

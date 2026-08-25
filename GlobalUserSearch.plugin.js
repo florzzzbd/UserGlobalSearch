@@ -18,7 +18,7 @@ const PLUGIN_VERSION = "1.0.22";
 const PLUGIN_AUTHOR = "florzzz";
 const PLUGIN_FILE_NAME = "GlobalUserSearch.plugin.js";
 const UPDATE_URL = "https://raw.githubusercontent.com/florzzzbd/UserGlobalSearch/main/GlobalUserSearch.plugin.js";
-// даём дискорду прогрузиться, потом проверяем обновления
+// give discord a moment to boot before checking for updates
 const UPDATE_CHECK_DELAY_MS = 2500;
 
 const NodeFS = require("fs");
@@ -28,7 +28,7 @@ const NS = "ugs2";
 
 const TRIGGER = "&";
 
-// дефолтные настройки. осторожно: у юзеров уже сохранённые, новые ключи просто добавляем
+// default settings. users already have saved ones, new keys just get merged in
 const DEFAULT_SETTINGS = Object.freeze({
 
 	maxUserResults: 10,
@@ -56,7 +56,7 @@ const DEFAULT_SETTINGS = Object.freeze({
 	welcomed: false
 });
 
-// границы для слайдеров в настройках, чтобы юзер не накрутил себе 100500 запросов
+// slider bounds so nobody cranks the request limits to insane values
 const SETTING_LIMITS = Object.freeze({
 	maxUserResults:    { min: 3, max: 25, step: 1 },
 	debounceMs:        { min: 0, max: 800, step: 50 },
@@ -557,7 +557,7 @@ function hasCyrillic(str) {
 	return /[\u0400-\u04FF]/.test(str);
 }
 
-// тупая транслитерация по таблице, но работает лучше навороченных либ для наших целей
+// dumb table-based transliteration, works better than fancy libs for our use case
 const TRANSLIT_MAP = Object.freeze({
 	"а": "a",  "б": "b",  "в": "v",  "г": "g",  "д": "d",
 	"е": "e",  "ё": "e",  "ж": "zh", "з": "z",  "и": "i",

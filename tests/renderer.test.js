@@ -14,8 +14,8 @@ test("results live in a scrollable host under the switcher input", () => {
 });
 
 test("rows keep their own class even without a native row", () => {
-	// раньше класс собирался без фолбэка и в список попадало слово "undefined",
-	// поэтому `?? ""` с последующим trim() обязателен в обоих местах сборки строки
+	// the row class used to be built without the fallback, leaking "undefined" into
+	// the class list - hence the `?? ""` plus trim() in both places rows are assembled
 	const matches = source.match(/`\$\{NS\}-row \$\{this\.native\.row \?\? ""\}`\.trim\(\)/g) || [];
 	assert.ok(matches.length >= 2, `expected guarded row class in >= 2 places, found ${matches.length}`);
 	assert.doesNotMatch(source, /`\$\{NS\}-row \$\{this\.native\.row\}`/);
