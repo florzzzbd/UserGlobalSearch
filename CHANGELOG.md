@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+- One rate-limit log line was still in Russian (`429 rate limit, повтор через…`) - console output is English across the board now
+- Test suite runs green again: loader paths, class names and renderer expectations had drifted behind the plugin during the rename
+
+### Improved
+- README cleaned up after the project rename: correct download link, no leftover AmpSearch references, badge images removed
+- Short comments around the settings blocks - how saved settings merge, why the sliders have bounds, why the transliteration table is hand-rolled instead of using a library
+
 ## 1.0.22 — 2026-08-18
 
 ### Fixed
