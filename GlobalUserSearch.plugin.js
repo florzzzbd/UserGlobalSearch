@@ -18,6 +18,7 @@ const PLUGIN_VERSION = "1.0.22";
 const PLUGIN_AUTHOR = "florzzz";
 const PLUGIN_FILE_NAME = "GlobalUserSearch.plugin.js";
 const UPDATE_URL = "https://raw.githubusercontent.com/florzzzbd/UserGlobalSearch/main/GlobalUserSearch.plugin.js";
+// даём дискорду прогрузиться, потом проверяем обновления
 const UPDATE_CHECK_DELAY_MS = 2500;
 
 const NodeFS = require("fs");
@@ -27,6 +28,7 @@ const NS = "ugs2";
 
 const TRIGGER = "&";
 
+// дефолтные настройки. осторожно: у юзеров уже сохранённые, новые ключи просто добавляем
 const DEFAULT_SETTINGS = Object.freeze({
 
 	maxUserResults: 10,
@@ -54,14 +56,15 @@ const DEFAULT_SETTINGS = Object.freeze({
 	welcomed: false
 });
 
+// границы для слайдеров в настройках, чтобы юзер не накрутил себе 100500 запросов
 const SETTING_LIMITS = Object.freeze({
-	maxUserResults:     { min: 3,   max: 25,  step: 1   },
-	debounceMs:         { min: 0,   max: 800, step: 50  },
-	maxMutualGuilds:    { min: 1,   max: 6,   step: 1   },
-	perTargetLimit:     { min: 1,   max: 15,  step: 1   },
-	maxTargets:         { min: 5,   max: 150, step: 5   },
-	totalLimit:         { min: 5,   max: 60,  step: 5   },
-	searchConcurrency:  { min: 1,   max: 8,   step: 1   }
+	maxUserResults:    { min: 3, max: 25, step: 1 },
+	debounceMs:        { min: 0, max: 800, step: 50 },
+	maxMutualGuilds:   { min: 1, max: 6, step: 1 },
+	perTargetLimit:    { min: 1, max: 15, step: 1 },
+	maxTargets:        { min: 5, max: 150, step: 5 },
+	totalLimit:        { min: 5, max: 60, step: 5 },
+	searchConcurrency: { min: 1, max: 8, step: 1 }
 });
 
 const AVATAR_SIZE = 64;
@@ -554,6 +557,7 @@ function hasCyrillic(str) {
 	return /[\u0400-\u04FF]/.test(str);
 }
 
+// тупая транслитерация по таблице, но работает лучше навороченных либ для наших целей
 const TRANSLIT_MAP = Object.freeze({
 	"а": "a",  "б": "b",  "в": "v",  "г": "g",  "д": "d",
 	"е": "e",  "ё": "e",  "ж": "zh", "з": "z",  "и": "i",
@@ -2260,7 +2264,7 @@ class MessageSearchTransport {
 				if (e && e.status === 429 && i < 1) {
 					const wait = Math.min(toInt(e?.body?.retry_after, 1), 4) * 1000;
 					this.cooldownUntil = Date.now() + wait;
-					this.log("transport", `429 rate limit, повтор через ${wait} мс`);
+					this.log("transport", `429 rate limit, retrying in ${wait} ms`);
 					await sleep(wait);
 					continue;
 				}
