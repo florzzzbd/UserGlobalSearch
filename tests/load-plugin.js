@@ -5,7 +5,7 @@ const path = require("node:path");
 const vm = require("node:vm");
 
 function loadPlugin(overrides = {}) {
-	const source = fs.readFileSync(path.join(__dirname, "..", "AmpSearch.plugin.js"), "utf8");
+	const source = fs.readFileSync(path.join(__dirname, "..", "GlobalUserSearch.plugin.js"), "utf8");
 	const sandbox = {
 		module: { exports: {} },
 		console,
@@ -13,6 +13,7 @@ function loadPlugin(overrides = {}) {
 		clearTimeout,
 		setInterval,
 		clearInterval,
+		require,
 		document: { documentElement: { lang: "en" } },
 		...overrides
 	};
@@ -21,9 +22,9 @@ function loadPlugin(overrides = {}) {
 	const exposed = [
 		"DEFAULT_SETTINGS", "parseAmpQuery", "normalize", "translitRuToEn", "translitEnToRu",
 		"queryVariants", "plural", "buildCandidates", "searchUsers", "highlightRanges",
-		"RestResolver", "MessageSearch", "extractSearchResult"
+		"VerifiedRestAPI", "MessageSearchTransport", "extractSearchResult"
 	].join(", ");
-	vm.runInContext(source + `\nmodule.exports.__test = { ${exposed} };`, sandbox, { filename: "AmpSearch.plugin.js" });
+	vm.runInContext(source + `\nmodule.exports.__test = { ${exposed} };`, sandbox, { filename: "GlobalUserSearch.plugin.js" });
 	return { Plugin: sandbox.module.exports, I: sandbox.module.exports.__test, sandbox, source };
 }
 

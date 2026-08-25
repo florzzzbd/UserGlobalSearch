@@ -7,9 +7,9 @@ const { loadPlugin } = require("./load-plugin.js");
 const { Plugin, source } = loadPlugin();
 
 test("plugin metadata and constructor", () => {
-	assert.equal(Plugin.name, "AmpSearch");
+	assert.equal(Plugin.name, "UserGlobalSearch");
 	assert.match(source, /@version 1\.0\.22/);
-	assert.match(source, /github\.com\/florzzzbd\/AmpSearch/);
+	assert.match(source, /github\.com\/florzzzbd\/UserGlobalSearch/);
 	const instance = new Plugin();
 	assert.equal(instance.settings.maxUserResults, 10);
 });

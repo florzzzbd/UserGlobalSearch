@@ -1,12 +1,12 @@
 {
-	"name": "ampsearch",
+	"name": "userglobalsearch",
 	"version": "1.0.22",
 	"description": "BetterDiscord people and message search through the & trigger in Quick Switcher",
 	"author": "florzzzbd",
 	"license": "MIT",
 	"private": true,
 	"scripts": {
-		"check": "node --check AmpSearch.plugin.js",
+		"check": "node --check GlobalUserSearch.plugin.js",
 		"test": "node --test tests/*.test.js"
 	}
 }

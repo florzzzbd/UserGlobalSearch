@@ -52,10 +52,10 @@ test("REST resolver rejects an unrelated get/post module", async () => {
 	const { I } = loadPlugin({
 		BdApi: { Webpack: { getModule: () => [modules.bad, modules.good] } }
 	});
-	const rest = new I.RestResolver();
+	const rest = new I.VerifiedRestAPI();
 	assert.equal(await rest.ensure(), modules.good);
 	assert.ok(modules.stats().badCalls > 0);
-	const search = new I.MessageSearch(rest);
+	const search = new I.MessageSearchTransport(rest);
 	const result = await search.searchTarget({ kind: "dm-global", id: "@me", name: "DM" }, userId, "", 5);
 	assert.equal(result.total, 1);
 	assert.equal(result.messages[0].content, "works");
